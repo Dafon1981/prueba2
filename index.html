@@ -3,312 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manu - Asistente de Base de Datos</title>
+    <title>Asistente de Base de Datos v4 (Final)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        :root {
-            --body-bg: #f0f2f5;
-            --chat-bg: #ffffff;
-            --user-msg-bg: #007bff;
-            --user-msg-text: #ffffff;
-            --bot-msg-bg: #e9e9eb;
-            --bot-msg-text: #000000;
-            --error-msg-bg: #ffdddd;
-            --error-msg-text: #d8000c;
-            --input-bg: #ffffff;
-            --border-color: #d1d1d1;
-            --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        body {
-            font-family: var(--font-family);
-            background-color: var(--body-bg);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .chat-container {
-            width: 100%;
-            max-width: 800px;
-            height: 90vh;
-            background-color: var(--chat-bg);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .chat-window {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-        }
-        .message {
-            padding: 10px 15px;
-            border-radius: 18px;
-            margin-bottom: 10px;
-            max-width: 75%;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-        .user-message {
-            background-color: var(--user-msg-bg);
-            color: var(--user-msg-text);
-            align-self: flex-end;
-        }
-        .bot-message {
-            background-color: var(--bot-msg-bg);
-            color: var(--bot-msg-text);
-            align-self: flex-start;
-        }
-        .error-message {
-            background-color: var(--error-msg-bg);
-            color: var(--error-msg-text);
-            align-self: flex-start;
-        }
-        .input-area {
-            display: flex;
-            padding: 10px;
-            border-top: 1px solid var(--border-color);
-        }
-        #user-input {
-            flex-grow: 1;
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 10px 15px;
-            font-size: 16px;
-            outline: none;
-        }
-        #user-input:focus {
-            border-color: var(--user-msg-bg);
-        }
-        .chat-button {
-            background-color: var(--user-msg-bg);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            margin-left: 10px;
-            cursor: pointer;
-            font-size: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .chat-button:hover {
-            opacity: 0.9;
-        }
-        .mic-button.is-recording {
-            background-color: #dc3545;
-        }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        .ver-mas-link { color: var(--user-msg-bg); cursor: pointer; text-decoration: underline; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
-        .modal-content { background-color: #fefefe; margin: auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 8px; position: relative; }
-        .close-button { color: #aaa; position: absolute; top: 10px; right: 20px; font-size: 28px; font-weight: bold; cursor: pointer; }
-        .close-button:hover { color: black; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .chat-container { width: 90%; max-width: 800px; height: 90vh; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1 ); display: flex; flex-direction: column; }
+        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
+        .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; max-width: 95%; line-height: 1.4; }
+        .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
+        .ia-message { background-color: #e9e9eb; color: #333; align-self: flex-start; }
+        .error-message { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
+        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; align-items: center; }
+        #user-input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; resize: none; }
+        .action-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s, transform 0.2s; }
+        .action-button:hover { background-color: #0056b3; }
+        #mic-button.recording { background-color: #dc3545; transform: scale(1.1); }
+        .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        .tabla-resultados th { background-color: #f2f2f2; font-weight: 600; }
+        .tabla-resultados tr:hover { background-color: #e9ecef; }
+        .ver-mas-btn { background: none; border: none; color: #007bff; cursor: pointer; text-decoration: underline; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .ficha-detalle { font-size: 16px; margin-bottom: 8px; }
+        .ficha-detalle strong { color: #333; min-width: 120px; display: inline-block; }
     </style>
 </head>
 <body>
-
-    <div class="chat-container">
-        <div class="chat-window" id="chat-window">
-            <div class="message bot-message">
-                ¡Hola! Soy Manu, tu asistente de base de datos. Puedes hacerme preguntas sobre los registros FUA.
-            </div>
-        </div>
-        <div class="input-area">
-            <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
-            <button id="mic-btn" class="chat-button mic-button">🎤</button>
-            <button id="send-btn" class="chat-button">➤</button>
-        </div>
+<div class="chat-container">
+    <div id="chat-window"></div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
+        <button id="mic-button" class="action-button">🎤</button>
+        <button id="send-button" class="action-button">→</button>
     </div>
+</div>
+<div id="detailsModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn">&times;</span>
+    <h3>Detalles Completos del Registro</h3>
+    <div id="modal-body"></div>
+  </div>
+</div>
+<script>
+    const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
+    const chatWindow = document.getElementById('chat-window');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    const micButton = document.getElementById('mic-button');
+    const modal = document.getElementById('detailsModal');
+    const modalBody = document.getElementById('modal-body');
+    const closeBtn = document.querySelector('.close-btn');
+    let allResults = [];
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition, speechTimeout, isRecording = false;
 
-    <div id="detail-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Detalles del Registro</h2>
-            <pre id="modal-data"></pre>
-        </div>
-    </div>
-
-    <script>
-        const chatWindow = document.getElementById('chat-window');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const micBtn = document.getElementById('mic-btn');
-        const modal = document.getElementById('detail-modal');
-        const modalData = document.getElementById('modal-data');
-        const closeBtn = document.querySelector('.close-button');
-
-        const SUPABASE_FUNCTION_URL = 'https://esiklpxyectbekxvajnw.supabase.co/functions/v1/chat-con-ia';
-        // Esta es tu llave pública (anon key ). Es seguro tenerla en el frontend.
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjA2NDQ0MjYsImV4cCI6MjAzNjIyMDQyNn0.2u8p23w-2VIJ2sX2Zqle02ZMPy2A3zww2y8r5X2kL5Q';
-
-        let registrosCache = [];
-
-        const enviarPregunta = async () => {
-            const pregunta = userInput.value.trim();
-            if (!pregunta) return;
-
-            agregarMensaje(pregunta, 'user');
-            userInput.value = '';
-            agregarMensaje('Pensando...', 'bot', 'thinking');
-
-            try {
-                const response = await fetch(SUPABASE_FUNCTION_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        // =================================================================
-                        // ¡CORRECCIÓN DEFINITIVA!
-                        // Añadimos las cabeceras de autenticación para evitar el error 401.
-                        // =================================================================
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-                    },
-                    body: JSON.stringify({ pregunta: pregunta })
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`El servidor respondió con estado ${response.status}. Respuesta: ${errorText.substring(0, 200)}...`);
-                }
-
-                const data = await response.json();
-                document.getElementById('thinking')?.remove();
-                procesarRespuesta(data);
-
-            } catch (error) {
-                console.error("Error detallado en fetch:", error);
-                document.getElementById('thinking')?.remove();
-                agregarMensaje(`Error de comunicación: ${error.message}`, 'error');
-            }
-        };
-
-        function procesarRespuesta(data) {
-            if (data.tipo === 'comando' && data.accion === 'limpiar') {
-                chatWindow.innerHTML = '';
-                const confirmMsg = document.createElement('div');
-                confirmMsg.className = 'message bot-message';
-                confirmMsg.textContent = 'Chat limpiado.';
-                chatWindow.appendChild(confirmMsg);
-                setTimeout(() => { if (chatWindow.contains(confirmMsg)) { chatWindow.removeChild(confirmMsg); } }, 2000);
-                return;
-            }
-
-            if (data.tipo === 'charla') {
-                agregarMensaje(data.respuesta, 'bot');
-            } else if (data.tipo === 'consulta_db') {
-                if (data.resultados && data.resultados.length > 0) {
-                    registrosCache = data.resultados;
-                    const resumen = `Encontré ${data.resultados.length} resultado(s). Aquí tienes un resumen:`;
-                    agregarMensajeConTabla(resumen, data.resultados);
-                } else {
-                    agregarMensaje('No encontré resultados para tu consulta.', 'bot');
-                }
-            } else {
-                agregarMensaje('Respuesta inesperada del servidor. Revisa la consola para más detalles.', 'error');
-            }
-        }
-
-        function agregarMensaje(texto, tipo, id = null) {
-            const msgDiv = document.createElement('div');
-            if (tipo === 'error') {
-                msgDiv.className = 'message error-message';
-            } else {
-                msgDiv.className = `message ${tipo}-message`;
-            }
-            msgDiv.textContent = texto;
-            if (id) msgDiv.id = id;
-            chatWindow.appendChild(msgDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-        
-        function agregarMensajeConTabla(resumen, resultados) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = 'message bot-message';
-            const resumenP = document.createElement('p');
-            resumenP.textContent = resumen;
-            msgDiv.appendChild(resumenP);
-            const table = document.createElement('table');
-            const thead = table.createTHead();
-            const headerRow = thead.insertRow();
-            ['Paciente', 'Fecha Atención', 'Costo', 'Acción'].forEach(text => {
-                const th = document.createElement('th');
-                th.textContent = text;
-                headerRow.appendChild(th);
-            });
-            const tbody = table.createTBody();
-            resultados.slice(0, 10).forEach((res, index) => {
-                const row = tbody.insertRow();
-                row.insertCell().textContent = res.PACIENTE;
-                row.insertCell().textContent = new Date(res.FecAte + 'T00:00:00').toLocaleDateString('es-ES');
-                row.insertCell().textContent = `S/ ${parseFloat(res.CostoTotal || 0).toFixed(2)}`;
-                const actionCell = row.insertCell();
-                const link = document.createElement('a');
-                link.textContent = 'Ver más';
-                link.className = 'ver-mas-link';
-                link.onclick = () => mostrarDetalles(index);
-                actionCell.appendChild(link);
-            });
-            msgDiv.appendChild(table);
-            chatWindow.appendChild(msgDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        function mostrarDetalles(index) {
-            const registro = registrosCache[index];
-            modalData.textContent = JSON.stringify(registro, null, 2);
-            modal.style.display = 'flex';
-        }
-
-        closeBtn.onclick = () => modal.style.display = 'none';
-        window.onclick = (event) => { if (event.target == modal) { modal.style.display = 'none'; } };
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-        let speechTimeout;
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'es-ES';
-            recognition.interimResults = true;
-            micBtn.addEventListener('click', () => {
-                if (micBtn.classList.contains('is-recording')) { stopRecordingAndSend(); } 
-                else { startRecording(); }
-            });
-            recognition.onresult = (event) => {
-                clearTimeout(speechTimeout);
-                let transcript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) { transcript += event.results[i][0].transcript; }
-                userInput.value = transcript;
-                speechTimeout = setTimeout(stopRecordingAndSend, 1000);
-            };
-            recognition.onend = () => { micBtn.classList.remove('is-recording'); };
-        } else {
-            micBtn.style.display = 'none';
-        }
-
-        function startRecording() {
-            recognition.start();
-            micBtn.classList.add('is-recording');
-            userInput.placeholder = 'Escuchando...';
-        }
-
-        function stopRecordingAndSend() {
-            if (micBtn.classList.contains('is-recording')) { recognition.stop(); }
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.lang = 'es-ES';
+        recognition.interimResults = true;
+        recognition.onresult = (event) => {
             clearTimeout(speechTimeout);
-            if (userInput.value.trim()) { enviarPregunta(); }
-            userInput.placeholder = 'Escribe o presiona el micrófono...';
-        }
+            let interimTranscript = '', finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                event.results[i].isFinal ? finalTranscript += event.results[i][0].transcript : interimTranscript += event.results[i][0].transcript;
+            }
+            userInput.value = finalTranscript + interimTranscript;
+            speechTimeout = setTimeout(stopRecordingAndSend, 2500);
+        };
+        recognition.onerror = (event) => {
+            console.error('Error en el reconocimiento de voz:', event.error);
+            addMessage(`Error de micrófono: ${event.error}`, 'error-message');
+            stopRecording();
+        };
+    } else {
+        micButton.style.display = 'none';
+    }
 
-        sendBtn.addEventListener('click', enviarPregunta);
-        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { enviarPregunta(); } });
-    </script>
+    function toggleRecording() { if (!recognition) return; isRecording ? stopRecording() : startRecording(); }
+    function startRecording() { isRecording = true; micButton.classList.add('recording'); micButton.textContent = '...'; userInput.placeholder = 'Escuchando...'; recognition.start(); }
+    function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
+    function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) handleUserMessage(); }, 100); }
+
+    micButton.addEventListener('click', toggleRecording);
+    document.addEventListener('DOMContentLoaded', () => { addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message'); });
+    sendButton.addEventListener('click', handleUserMessage);
+    userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
+    closeBtn.onclick = () => modal.style.display = "none";
+    window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
+
+    function addMessage(content, type) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', type);
+        messageDiv.innerHTML = content;
+        chatWindow.appendChild(messageDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function handleUserMessage() {
+        const pregunta = userInput.value.trim();
+        if (!pregunta) return;
+        addMessage(pregunta, 'user-message');
+        userInput.value = '';
+        addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
+        try {
+            const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta } });
+            if (functionError) throw functionError;
+            chatWindow.removeChild(chatWindow.lastChild);
+            if (iaResponse.tipo === 'charla') {
+                addMessage(iaResponse.respuesta, 'ia-message');
+            } else if (iaResponse.tipo === 'consulta_db') {
+                const resultados = iaResponse.resultados;
+                if (!resultados || resultados.length === 0) {
+                    addMessage('No encontré resultados para tu consulta.', 'ia-message');
+                } else {
+                    allResults = resultados;
+                    const tablaHTML = `<p>Encontré ${resultados.length} resultado(s). Aquí tienes un resumen:</p><table class="tabla-resultados"><thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${resultados.map((paciente, index) => `<tr><td>${paciente.PACIENTE || 'N/A'}</td><td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td><td>S/ ${paciente.CostoTotal || '0.00'}</td><td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td></tr>`).join('')}</tbody></table>`;
+                    addMessage(tablaHTML, 'ia-message');
+                }
+            } else {
+                throw new Error("La respuesta de la IA no tiene un formato que entienda.");
+            }
+        } catch (error) {
+            console.error('Error en el proceso:', error);
+            if (chatWindow.lastChild.textContent.includes('Analizando')) chatWindow.removeChild(chatWindow.lastChild);
+            addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
+        }
+    }
+
+    function showDetails(index) {
+        const item = allResults[index];
+        if (!item) return;
+        let detailsHTML = '';
+        for (const key in item) {
+            if (key !== 'id') detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
+        }
+        modalBody.innerHTML = detailsHTML;
+        modal.style.display = "block";
+    }
+</script>
 </body>
 </html>
