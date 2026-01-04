@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+<!-- El HTML y CSS son idénticos al anterior, no hay cambios visuales -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de Base de Datos v3 (con Voz)</title>
+    <title>Asistente de Base de Datos v2</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
@@ -13,25 +14,9 @@
         .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
         .ia-message { background-color: #e9e9eb; color: #333; align-self: flex-start; }
         .error-message { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
-        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; align-items: center; }
+        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; }
         #user-input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; resize: none; }
-        
-        /* --- ESTILOS PARA LOS BOTONES DE ACCIÓN --- */
-        .action-button {
-            background: #007bff; color: white; border: none; border-radius: 50%;
-            width: 45px; height: 45px; margin-left: 10px; font-size: 20px;
-            cursor: pointer; display: flex; justify-content: center; align-items: center;
-            transition: background-color 0.2s, transform 0.2s;
-        }
-        .action-button:hover { background-color: #0056b3; }
-        
-        /* Estilo específico para el botón de audio cuando está grabando */
-        #mic-button.recording {
-            background-color: #dc3545; /* Rojo para indicar que está grabando */
-            transform: scale(1.1);
-        }
-
-        /* --- ESTILOS PARA LA TABLA Y MODAL (sin cambios) --- */
+        #send-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; font-size: 20px; cursor: pointer; align-self: center; }
         .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         .tabla-resultados th { background-color: #f2f2f2; font-weight: 600; }
@@ -45,17 +30,13 @@
     </style>
 </head>
 <body>
-
 <div class="chat-container">
     <div id="chat-window"></div>
     <div id="input-area">
-        <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
-        <!-- ¡NUEVO BOTÓN DE MICRÓFONO! -->
-        <button id="mic-button" class="action-button">🎤</button>
-        <button id="send-button" class="action-button">→</button>
+        <input type="text" id="user-input" placeholder="Ej: muéstrame 10 pacientes sin consumo...">
+        <button id="send-button">→</button>
     </div>
 </div>
-
 <div id="detailsModal" class="modal">
   <div class="modal-content">
     <span class="close-btn">&times;</span>
@@ -63,107 +44,19 @@
     <div id="modal-body"></div>
   </div>
 </div>
-
 <script>
-    // --- CONFIGURACIÓN Y CONSTANTES (sin cambios) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
-
     const chatWindow = document.getElementById('chat-window');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
-    const micButton = document.getElementById('mic-button'); // Nuevo botón
     const modal = document.getElementById('detailsModal');
     const modalBody = document.getElementById('modal-body');
     const closeBtn = document.querySelector('.close-btn');
     let allResults = [];
 
-    // --- LÓGICA DE RECONOCIMIENTO DE VOZ ---
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    let recognition;
-    let speechTimeout;
-    let isRecording = false;
-
-    if (SpeechRecognition) {
-        recognition = new SpeechRecognition();
-        recognition.continuous = true; // Sigue escuchando
-        recognition.lang = 'es-ES'; // Español de España (puedes cambiarlo a 'es-PE' para Perú)
-        recognition.interimResults = true; // Muestra resultados parciales
-
-        recognition.onresult = (event) => {
-            clearTimeout(speechTimeout); // Reinicia el temporizador cada vez que detecta habla
-            let interimTranscript = '';
-            let finalTranscript = '';
-
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-                if (event.results[i].isFinal) {
-                    finalTranscript += event.results[i][0].transcript;
-                } else {
-                    interimTranscript += event.results[i][0].transcript;
-                }
-            }
-            
-            userInput.value = finalTranscript + interimTranscript; // Actualiza el input en tiempo real
-
-            // Inicia un temporizador para detectar el final del habla
-            speechTimeout = setTimeout(() => {
-                stopRecordingAndSend();
-            }, 2500); // 2.5 segundos de silencio para enviar
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Error en el reconocimiento de voz:', event.error);
-            addMessage(`Error de micrófono: ${event.error}`, 'error-message');
-            stopRecording();
-        };
-
-    } else {
-        micButton.style.display = 'none'; // Oculta el botón si la API no es compatible
-        console.warn('La API de Reconocimiento de Voz no es compatible con este navegador.');
-    }
-
-    function toggleRecording() {
-        if (!recognition) return;
-        isRecording ? stopRecording() : startRecording();
-    }
-
-    function startRecording() {
-        isRecording = true;
-        micButton.classList.add('recording');
-        micButton.textContent = '...'; // Feedback visual
-        userInput.placeholder = 'Escuchando...';
-        recognition.start();
-    }
-
-    function stopRecording() {
-        if (!isRecording) return;
-        isRecording = false;
-        micButton.classList.remove('recording');
-        micButton.textContent = '🎤';
-        userInput.placeholder = 'Escribe o presiona el micrófono...';
-        recognition.stop();
-        clearTimeout(speechTimeout);
-    }
-
-    function stopRecordingAndSend() {
-        if (!isRecording) return;
-        stopRecording();
-        // Pequeña espera para asegurar que el último texto se procesó
-        setTimeout(() => {
-            if (userInput.value.trim()) {
-                handleUserMessage();
-            }
-        }, 100);
-    }
-
-    micButton.addEventListener('click', toggleRecording);
-
-    // --- LÓGICA DEL CHAT (sin cambios, solo se integra con la voz) ---
-    document.addEventListener('DOMContentLoaded', () => {
-        addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
-    });
-
+    document.addEventListener('DOMContentLoaded', () => { addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message'); });
     sendButton.addEventListener('click', handleUserMessage);
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
     closeBtn.onclick = () => modal.style.display = "none";
@@ -185,28 +78,20 @@
         addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
 
         try {
-            const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta } });
-            if (planError) throw planError;
+            // La llamada a la Edge Function no cambia
+            const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta } });
+            if (functionError) throw functionError;
             chatWindow.removeChild(chatWindow.lastChild);
 
+            // =================================================================
+            // ¡NUEVA LÓGICA DE RENDERIZADO!
+            // Ahora el front-end no ejecuta consultas, solo muestra lo que el back-end le da.
+            // =================================================================
             if (iaResponse.tipo === 'charla') {
                 addMessage(iaResponse.respuesta, 'ia-message');
             } else if (iaResponse.tipo === 'consulta_db') {
-                const plan = iaResponse.plan;
-                let query = supabase.from(plan.tabla).select(plan.columnas);
-                if (plan.filtros) {
-                    plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
-                }
-                if (plan.limite) {
-                    query = query.limit(plan.limite);
-                }
-
-                const { data: resultados, error: dbError, count } = await query.select(plan.accion === 'count' ? '*' : plan.columnas, { count: plan.accion === 'count' ? 'exact' : null });
-                if (dbError) throw dbError;
-
-                if (plan.accion === 'count') {
-                    addMessage(`Encontré un total de <strong>${count}</strong> registros.`, 'ia-message');
-                } else if (!resultados || resultados.length === 0) {
+                const resultados = iaResponse.resultados;
+                if (!resultados || resultados.length === 0) {
                     addMessage('No encontré resultados para tu consulta.', 'ia-message');
                 } else {
                     allResults = resultados;
@@ -228,7 +113,7 @@
                     addMessage(tablaHTML, 'ia-message');
                 }
             } else {
-                throw new Error("La respuesta de la IA no tiene el formato esperado.");
+                throw new Error("La respuesta de la IA no tiene un formato que entienda.");
             }
         } catch (error) {
             console.error('Error en el proceso:', error);
@@ -252,6 +137,5 @@
         modal.style.display = "block";
     }
 </script>
-
 </body>
 </html>
