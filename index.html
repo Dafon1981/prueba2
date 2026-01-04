@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<!-- El HTML y CSS son idénticos al anterior, no hay cambios visuales -->
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de Base de Datos v2</title>
+    <title>Asistente de Base de Datos v4 (Final)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
@@ -14,9 +13,11 @@
         .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
         .ia-message { background-color: #e9e9eb; color: #333; align-self: flex-start; }
         .error-message { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
-        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; }
+        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; align-items: center; }
         #user-input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; resize: none; }
-        #send-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; font-size: 20px; cursor: pointer; align-self: center; }
+        .action-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s, transform 0.2s; }
+        .action-button:hover { background-color: #0056b3; }
+        #mic-button.recording { background-color: #dc3545; transform: scale(1.1); }
         .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         .tabla-resultados th { background-color: #f2f2f2; font-weight: 600; }
@@ -33,8 +34,9 @@
 <div class="chat-container">
     <div id="chat-window"></div>
     <div id="input-area">
-        <input type="text" id="user-input" placeholder="Ej: muéstrame 10 pacientes sin consumo...">
-        <button id="send-button">→</button>
+        <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
+        <button id="mic-button" class="action-button">🎤</button>
+        <button id="send-button" class="action-button">→</button>
     </div>
 </div>
 <div id="detailsModal" class="modal">
@@ -51,16 +53,48 @@
     const chatWindow = document.getElementById('chat-window');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const micButton = document.getElementById('mic-button');
     const modal = document.getElementById('detailsModal');
     const modalBody = document.getElementById('modal-body');
     const closeBtn = document.querySelector('.close-btn');
     let allResults = [];
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition, speechTimeout, isRecording = false;
 
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.lang = 'es-ES';
+        recognition.interimResults = true;
+        recognition.onresult = (event) => {
+            clearTimeout(speechTimeout);
+            let interimTranscript = '', finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                event.results[i].isFinal ? finalTranscript += event.results[i][0].transcript : interimTranscript += event.results[i][0].transcript;
+            }
+            userInput.value = finalTranscript + interimTranscript;
+            speechTimeout = setTimeout(stopRecordingAndSend, 2500);
+        };
+        recognition.onerror = (event) => {
+            console.error('Error en el reconocimiento de voz:', event.error);
+            addMessage(`Error de micrófono: ${event.error}`, 'error-message');
+            stopRecording();
+        };
+    } else {
+        micButton.style.display = 'none';
+    }
+
+    function toggleRecording() { if (!recognition) return; isRecording ? stopRecording() : startRecording(); }
+    function startRecording() { isRecording = true; micButton.classList.add('recording'); micButton.textContent = '...'; userInput.placeholder = 'Escuchando...'; recognition.start(); }
+    function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
+    function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) handleUserMessage(); }, 100); }
+
+    micButton.addEventListener('click', toggleRecording);
     document.addEventListener('DOMContentLoaded', () => { addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message'); });
     sendButton.addEventListener('click', handleUserMessage);
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
     closeBtn.onclick = () => modal.style.display = "none";
-    window.onclick = (event) => { if (event.target == modal) { modal.style.display = "none"; } };
+    window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; };
 
     function addMessage(content, type) {
         const messageDiv = document.createElement('div');
@@ -76,17 +110,10 @@
         addMessage(pregunta, 'user-message');
         userInput.value = '';
         addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
-
         try {
-            // La llamada a la Edge Function no cambia
             const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta } });
             if (functionError) throw functionError;
             chatWindow.removeChild(chatWindow.lastChild);
-
-            // =================================================================
-            // ¡NUEVA LÓGICA DE RENDERIZADO!
-            // Ahora el front-end no ejecuta consultas, solo muestra lo que el back-end le da.
-            // =================================================================
             if (iaResponse.tipo === 'charla') {
                 addMessage(iaResponse.respuesta, 'ia-message');
             } else if (iaResponse.tipo === 'consulta_db') {
@@ -95,21 +122,7 @@
                     addMessage('No encontré resultados para tu consulta.', 'ia-message');
                 } else {
                     allResults = resultados;
-                    const tablaHTML = `
-                        <p>Encontré ${resultados.length} resultado(s). Aquí tienes un resumen:</p>
-                        <table class="tabla-resultados">
-                            <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
-                            <tbody>
-                                ${resultados.map((paciente, index) => `
-                                    <tr>
-                                        <td>${paciente.PACIENTE || 'N/A'}</td>
-                                        <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
-                                        <td>S/ ${paciente.CostoTotal || '0.00'}</td>
-                                        <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>`;
+                    const tablaHTML = `<p>Encontré ${resultados.length} resultado(s). Aquí tienes un resumen:</p><table class="tabla-resultados"><thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${resultados.map((paciente, index) => `<tr><td>${paciente.PACIENTE || 'N/A'}</td><td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td><td>S/ ${paciente.CostoTotal || '0.00'}</td><td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td></tr>`).join('')}</tbody></table>`;
                     addMessage(tablaHTML, 'ia-message');
                 }
             } else {
@@ -117,9 +130,7 @@
             }
         } catch (error) {
             console.error('Error en el proceso:', error);
-            if (chatWindow.lastChild.textContent.includes('Analizando')) {
-                chatWindow.removeChild(chatWindow.lastChild);
-            }
+            if (chatWindow.lastChild.textContent.includes('Analizando')) chatWindow.removeChild(chatWindow.lastChild);
             addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
         }
     }
@@ -129,9 +140,7 @@
         if (!item) return;
         let detailsHTML = '';
         for (const key in item) {
-            if (key !== 'id') {
-                detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
-            }
+            if (key !== 'id') detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
         }
         modalBody.innerHTML = detailsHTML;
         modal.style.display = "block";
