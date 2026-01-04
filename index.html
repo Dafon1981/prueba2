@@ -221,14 +221,18 @@
             if (!isLoadMore) {
                 const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta } });
                 if (planError) throw planError;
-                plan = JSON.parse(iaResponse).plan;
+                
+                // La respuesta de la función de Supabase ya viene parseada en iaResponse.data
+                const parsedResponse = iaResponse;
                 
                 // Si la IA responde con una charla, no hay plan, solo respuesta.
-                if (JSON.parse(iaResponse).tipo === 'charla') {
+                if (parsedResponse.tipo === 'charla') {
                     chatWindow.removeChild(chatWindow.lastChild);
-                    addMessage(JSON.parse(iaResponse).respuesta, 'ia-message');
+                    addMessage(parsedResponse.respuesta, 'ia-message');
                     return;
                 }
+                
+                plan = parsedResponse.plan;
                 
                 currentPlan = { ...plan, pregunta: pregunta }; // Guardar el plan para futuras paginaciones
             } else {
