@@ -73,7 +73,7 @@
                 event.results[i].isFinal ? finalTranscript += event.results[i][0].transcript : interimTranscript += event.results[i][0].transcript;
             }
             userInput.value = finalTranscript + interimTranscript;
-            speechTimeout = setTimeout(stopRecordingAndSend, 2500);
+            speechTimeout = setTimeout(stopRecordingAndSend, 1000);
         };
         recognition.onerror = (event) => {
             console.error('Error en el reconocimiento de voz:', event.error);
@@ -148,3 +148,4 @@
 </script>
 </body>
 </html>
+
