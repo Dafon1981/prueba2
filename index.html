@@ -12,6 +12,8 @@
             --user-msg-text: #ffffff;
             --bot-msg-bg: #e9e9eb;
             --bot-msg-text: #000000;
+            --error-msg-bg: #ffdddd;
+            --error-msg-text: #d8000c;
             --input-bg: #ffffff;
             --border-color: #d1d1d1;
             --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -62,8 +64,8 @@
             align-self: flex-start;
         }
         .error-message {
-            background-color: #ffdddd;
-            color: #d8000c;
+            background-color: var(--error-msg-bg);
+            color: var(--error-msg-text);
             align-self: flex-start;
         }
         .input-area {
@@ -145,10 +147,12 @@
         const closeBtn = document.querySelector('.close-button');
 
         const SUPABASE_FUNCTION_URL = 'https://esiklpxyectbekxvajnw.supabase.co/functions/v1/chat-con-ia';
+        // Esta es tu llave pública (anon key ). Es seguro tenerla en el frontend.
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjA2NDQ0MjYsImV4cCI6MjAzNjIyMDQyNn0.2u8p23w-2VIJ2sX2Zqle02ZMPy2A3zww2y8r5X2kL5Q';
 
         let registrosCache = [];
 
-        const enviarPregunta = async ( ) => {
+        const enviarPregunta = async () => {
             const pregunta = userInput.value.trim();
             if (!pregunta) return;
 
@@ -159,15 +163,19 @@
             try {
                 const response = await fetch(SUPABASE_FUNCTION_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        // =================================================================
+                        // ¡CORRECCIÓN DEFINITIVA!
+                        // Añadimos las cabeceras de autenticación para evitar el error 401.
+                        // =================================================================
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
                     body: JSON.stringify({ pregunta: pregunta })
                 });
 
-                // =================================================================
-                // ¡MANEJO DE ERRORES MEJORADO!
-                // =================================================================
                 if (!response.ok) {
-                    // Si la respuesta no es un 2xx, intentamos leer el texto del error.
                     const errorText = await response.text();
                     throw new Error(`El servidor respondió con estado ${response.status}. Respuesta: ${errorText.substring(0, 200)}...`);
                 }
@@ -177,9 +185,8 @@
                 procesarRespuesta(data);
 
             } catch (error) {
-                console.error("Error detallado en fetch:", error); // Log para la consola
+                console.error("Error detallado en fetch:", error);
                 document.getElementById('thinking')?.remove();
-                // Mostramos un error más útil en el chat
                 agregarMensaje(`Error de comunicación: ${error.message}`, 'error');
             }
         };
@@ -212,14 +219,17 @@
 
         function agregarMensaje(texto, tipo, id = null) {
             const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${tipo}-message`;
+            if (tipo === 'error') {
+                msgDiv.className = 'message error-message';
+            } else {
+                msgDiv.className = `message ${tipo}-message`;
+            }
             msgDiv.textContent = texto;
             if (id) msgDiv.id = id;
             chatWindow.appendChild(msgDiv);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
         
-        // ... (El resto de las funciones: agregarMensajeConTabla, mostrarDetalles, reconocimiento de voz, etc. no necesitan cambios)
         function agregarMensajeConTabla(resumen, resultados) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'message bot-message';
@@ -251,13 +261,16 @@
             chatWindow.appendChild(msgDiv);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
+
         function mostrarDetalles(index) {
             const registro = registrosCache[index];
             modalData.textContent = JSON.stringify(registro, null, 2);
             modal.style.display = 'flex';
         }
+
         closeBtn.onclick = () => modal.style.display = 'none';
         window.onclick = (event) => { if (event.target == modal) { modal.style.display = 'none'; } };
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let speechTimeout;
@@ -280,17 +293,20 @@
         } else {
             micBtn.style.display = 'none';
         }
+
         function startRecording() {
             recognition.start();
             micBtn.classList.add('is-recording');
             userInput.placeholder = 'Escuchando...';
         }
+
         function stopRecordingAndSend() {
             if (micBtn.classList.contains('is-recording')) { recognition.stop(); }
             clearTimeout(speechTimeout);
             if (userInput.value.trim()) { enviarPregunta(); }
             userInput.placeholder = 'Escribe o presiona el micrófono...';
         }
+
         sendBtn.addEventListener('click', enviarPregunta);
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { enviarPregunta(); } });
     </script>
