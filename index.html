@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de Base de Datos v2</title>
+    <title>Asistente de Base de Datos v3 (con Voz)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
@@ -13,19 +13,30 @@
         .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
         .ia-message { background-color: #e9e9eb; color: #333; align-self: flex-start; }
         .error-message { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
-        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; }
+        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; align-items: center; }
         #user-input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; resize: none; }
-        #send-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; font-size: 20px; cursor: pointer; align-self: center; }
         
-        /* --- ¡NUEVOS ESTILOS PARA LA TABLA! --- */
+        /* --- ESTILOS PARA LOS BOTONES DE ACCIÓN --- */
+        .action-button {
+            background: #007bff; color: white; border: none; border-radius: 50%;
+            width: 45px; height: 45px; margin-left: 10px; font-size: 20px;
+            cursor: pointer; display: flex; justify-content: center; align-items: center;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .action-button:hover { background-color: #0056b3; }
+        
+        /* Estilo específico para el botón de audio cuando está grabando */
+        #mic-button.recording {
+            background-color: #dc3545; /* Rojo para indicar que está grabando */
+            transform: scale(1.1);
+        }
+
+        /* --- ESTILOS PARA LA TABLA Y MODAL (sin cambios) --- */
         .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         .tabla-resultados th { background-color: #f2f2f2; font-weight: 600; }
-        .tabla-resultados tr:nth-child(even) { background-color: #f9f9f9; }
         .tabla-resultados tr:hover { background-color: #e9ecef; }
         .ver-mas-btn { background: none; border: none; color: #007bff; cursor: pointer; text-decoration: underline; }
-
-        /* Estilos para el modal de detalles */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; }
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
@@ -38,12 +49,13 @@
 <div class="chat-container">
     <div id="chat-window"></div>
     <div id="input-area">
-        <input type="text" id="user-input" placeholder="Ej: muéstrame 10 pacientes sin consumo...">
-        <button id="send-button">→</button>
+        <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
+        <!-- ¡NUEVO BOTÓN DE MICRÓFONO! -->
+        <button id="mic-button" class="action-button">🎤</button>
+        <button id="send-button" class="action-button">→</button>
     </div>
 </div>
 
-<!-- El Modal para mostrar detalles completos -->
 <div id="detailsModal" class="modal">
   <div class="modal-content">
     <span class="close-btn">&times;</span>
@@ -53,6 +65,7 @@
 </div>
 
 <script>
+    // --- CONFIGURACIÓN Y CONSTANTES (sin cambios) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
@@ -60,12 +73,93 @@
     const chatWindow = document.getElementById('chat-window');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const micButton = document.getElementById('mic-button'); // Nuevo botón
     const modal = document.getElementById('detailsModal');
     const modalBody = document.getElementById('modal-body');
     const closeBtn = document.querySelector('.close-btn');
+    let allResults = [];
 
-    let allResults = []; // Guardaremos todos los resultados aquí
+    // --- LÓGICA DE RECONOCIMIENTO DE VOZ ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition;
+    let speechTimeout;
+    let isRecording = false;
 
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true; // Sigue escuchando
+        recognition.lang = 'es-ES'; // Español de España (puedes cambiarlo a 'es-PE' para Perú)
+        recognition.interimResults = true; // Muestra resultados parciales
+
+        recognition.onresult = (event) => {
+            clearTimeout(speechTimeout); // Reinicia el temporizador cada vez que detecta habla
+            let interimTranscript = '';
+            let finalTranscript = '';
+
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            
+            userInput.value = finalTranscript + interimTranscript; // Actualiza el input en tiempo real
+
+            // Inicia un temporizador para detectar el final del habla
+            speechTimeout = setTimeout(() => {
+                stopRecordingAndSend();
+            }, 2500); // 2.5 segundos de silencio para enviar
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Error en el reconocimiento de voz:', event.error);
+            addMessage(`Error de micrófono: ${event.error}`, 'error-message');
+            stopRecording();
+        };
+
+    } else {
+        micButton.style.display = 'none'; // Oculta el botón si la API no es compatible
+        console.warn('La API de Reconocimiento de Voz no es compatible con este navegador.');
+    }
+
+    function toggleRecording() {
+        if (!recognition) return;
+        isRecording ? stopRecording() : startRecording();
+    }
+
+    function startRecording() {
+        isRecording = true;
+        micButton.classList.add('recording');
+        micButton.textContent = '...'; // Feedback visual
+        userInput.placeholder = 'Escuchando...';
+        recognition.start();
+    }
+
+    function stopRecording() {
+        if (!isRecording) return;
+        isRecording = false;
+        micButton.classList.remove('recording');
+        micButton.textContent = '🎤';
+        userInput.placeholder = 'Escribe o presiona el micrófono...';
+        recognition.stop();
+        clearTimeout(speechTimeout);
+    }
+
+    function stopRecordingAndSend() {
+        if (!isRecording) return;
+        stopRecording();
+        // Pequeña espera para asegurar que el último texto se procesó
+        setTimeout(() => {
+            if (userInput.value.trim()) {
+                handleUserMessage();
+            }
+        }, 100);
+    }
+
+    micButton.addEventListener('click', toggleRecording);
+
+    // --- LÓGICA DEL CHAT (sin cambios, solo se integra con la voz) ---
     document.addEventListener('DOMContentLoaded', () => {
         addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
     });
@@ -115,18 +209,11 @@
                 } else if (!resultados || resultados.length === 0) {
                     addMessage('No encontré resultados para tu consulta.', 'ia-message');
                 } else {
-                    allResults = resultados; // Guardamos los resultados para el modal
+                    allResults = resultados;
                     const tablaHTML = `
                         <p>Encontré ${resultados.length} resultado(s). Aquí tienes un resumen:</p>
                         <table class="tabla-resultados">
-                            <thead>
-                                <tr>
-                                    <th>Paciente</th>
-                                    <th>Fecha Atención</th>
-                                    <th>Costo</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
+                            <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
                             <tbody>
                                 ${resultados.map((paciente, index) => `
                                     <tr>
@@ -137,8 +224,7 @@
                                     </tr>
                                 `).join('')}
                             </tbody>
-                        </table>
-                    `;
+                        </table>`;
                     addMessage(tablaHTML, 'ia-message');
                 }
             } else {
