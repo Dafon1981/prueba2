@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Asistente de Base de Datos v4 (Conversacional y Paginado)</title>
+    <title>Asistente de Base de Datos v3 (con Voz)</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* Estilos Base */
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px 0; }
-        .chat-container { width: 90%; max-width: 800px; height: 90vh; min-height: 600px; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .chat-container { width: 90%; max-width: 800px; height: 90vh; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1 ); display: flex; flex-direction: column; }
         #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
         .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; max-width: 95%; line-height: 1.4; }
         .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
@@ -17,51 +16,32 @@
         #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; align-items: center; }
         #user-input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; resize: none; }
         
-        /* Botones de Acción */
+        /* --- ESTILOS PARA LOS BOTONES DE ACCIÓN --- */
         .action-button {
             background: #007bff; color: white; border: none; border-radius: 50%;
             width: 45px; height: 45px; margin-left: 10px; font-size: 20px;
             cursor: pointer; display: flex; justify-content: center; align-items: center;
             transition: background-color 0.2s, transform 0.2s;
-            flex-shrink: 0; /* Evita que se encojan en pantallas pequeñas */
         }
         .action-button:hover { background-color: #0056b3; }
-        #mic-button.recording { background-color: #dc3545; transform: scale(1.1); }
+        
+        /* Estilo específico para el botón de audio cuando está grabando */
+        #mic-button.recording {
+            background-color: #dc3545; /* Rojo para indicar que está grabando */
+            transform: scale(1.1);
+        }
 
-        /* Estilos de Tabla y Paginación */
-        .tabla-wrapper { overflow-x: auto; margin-top: 10px; }
-        .tabla-resultados { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 500px; }
+        /* --- ESTILOS PARA LA TABLA Y MODAL (sin cambios) --- */
+        .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         .tabla-resultados th { background-color: #f2f2f2; font-weight: 600; }
         .tabla-resultados tr:hover { background-color: #e9ecef; }
         .ver-mas-btn { background: none; border: none; color: #007bff; cursor: pointer; text-decoration: underline; }
-        
-        /* Botón de Cargar Más */
-        .load-more-container { text-align: center; padding: 10px 0; }
-        #load-more-button {
-            background-color: #28a745; color: white; border: none; padding: 10px 20px;
-            border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s;
-        }
-        #load-more-button:hover { background-color: #1e7e34; }
-        #load-more-button:disabled { background-color: #6c757d; cursor: not-allowed; }
-
-        /* Estilos de Modal (sin cambios) */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
         .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; }
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .ficha-detalle { font-size: 16px; margin-bottom: 8px; }
         .ficha-detalle strong { color: #333; min-width: 120px; display: inline-block; }
-
-        /* Responsividad */
-        @media (max-width: 600px) {
-            body { padding: 0; }
-            .chat-container { width: 100%; height: 100vh; min-height: auto; border-radius: 0; }
-            #input-area { padding: 10px; }
-            #user-input { font-size: 14px; padding: 10px 12px; }
-            .action-button { width: 40px; height: 40px; font-size: 18px; }
-            .message { max-width: 90%; }
-            .tabla-resultados { font-size: 12px; }
-        }
     </style>
 </head>
 <body>
@@ -70,6 +50,7 @@
     <div id="chat-window"></div>
     <div id="input-area">
         <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
+        <!-- ¡NUEVO BOTÓN DE MICRÓFONO! -->
         <button id="mic-button" class="action-button">🎤</button>
         <button id="send-button" class="action-button">→</button>
     </div>
@@ -84,7 +65,7 @@
 </div>
 
 <script>
-    // --- CONFIGURACIÓN Y CONSTANTES ---
+    // --- CONFIGURACIÓN Y CONSTANTES (sin cambios) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
@@ -92,19 +73,13 @@
     const chatWindow = document.getElementById('chat-window');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
-    const micButton = document.getElementById('mic-button');
+    const micButton = document.getElementById('mic-button'); // Nuevo botón
     const modal = document.getElementById('detailsModal');
     const modalBody = document.getElementById('modal-body');
     const closeBtn = document.querySelector('.close-btn');
-    
-    // Variables para la paginación
-    const LIMIT = 100;
-    let currentOffset = 0;
-    let currentPlan = null; // Almacena el plan de consulta de la IA para "Cargar Más"
-    let allResults = []; // Almacena los resultados de la página actual para el modal
-    let totalCount = 0; // Almacena el total de registros encontrados
+    let allResults = [];
 
-    // --- LÓGICA DE RECONOCIMIENTO DE VOZ (sin cambios funcionales) ---
+    // --- LÓGICA DE RECONOCIMIENTO DE VOZ ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     let speechTimeout;
@@ -112,12 +87,12 @@
 
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.lang = 'es-ES';
-        recognition.interimResults = true;
+        recognition.continuous = true; // Sigue escuchando
+        recognition.lang = 'es-ES'; // Español de España (puedes cambiarlo a 'es-PE' para Perú)
+        recognition.interimResults = true; // Muestra resultados parciales
 
         recognition.onresult = (event) => {
-            clearTimeout(speechTimeout);
+            clearTimeout(speechTimeout); // Reinicia el temporizador cada vez que detecta habla
             let interimTranscript = '';
             let finalTranscript = '';
 
@@ -129,11 +104,12 @@
                 }
             }
             
-            userInput.value = finalTranscript + interimTranscript;
+            userInput.value = finalTranscript + interimTranscript; // Actualiza el input en tiempo real
 
+            // Inicia un temporizador para detectar el final del habla
             speechTimeout = setTimeout(() => {
                 stopRecordingAndSend();
-            }, 2500);
+            }, 2500); // 2.5 segundos de silencio para enviar
         };
 
         recognition.onerror = (event) => {
@@ -143,7 +119,7 @@
         };
 
     } else {
-        micButton.style.display = 'none';
+        micButton.style.display = 'none'; // Oculta el botón si la API no es compatible
         console.warn('La API de Reconocimiento de Voz no es compatible con este navegador.');
     }
 
@@ -155,7 +131,7 @@
     function startRecording() {
         isRecording = true;
         micButton.classList.add('recording');
-        micButton.textContent = '...';
+        micButton.textContent = '...'; // Feedback visual
         userInput.placeholder = 'Escuchando...';
         recognition.start();
     }
@@ -173,6 +149,7 @@
     function stopRecordingAndSend() {
         if (!isRecording) return;
         stopRecording();
+        // Pequeña espera para asegurar que el último texto se procesó
         setTimeout(() => {
             if (userInput.value.trim()) {
                 handleUserMessage();
@@ -182,9 +159,9 @@
 
     micButton.addEventListener('click', toggleRecording);
 
-    // --- LÓGICA DEL CHAT Y PAGINACIÓN ---
+    // --- LÓGICA DEL CHAT (sin cambios, solo se integra con la voz) ---
     document.addEventListener('DOMContentLoaded', () => {
-        addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué paciente o fecha te gustaría buscar hoy?", 'ia-message');
+        addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
     });
 
     sendButton.addEventListener('click', handleUserMessage);
@@ -200,133 +177,65 @@
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    // Función principal para manejar la consulta
-    async function handleUserMessage(isLoadMore = false) {
-        const pregunta = isLoadMore ? currentPlan.pregunta : userInput.value.trim();
+    async function handleUserMessage() {
+        const pregunta = userInput.value.trim();
         if (!pregunta) return;
-
-        if (!isLoadMore) {
-            addMessage(pregunta, 'user-message');
-            userInput.value = '';
-            currentOffset = 0; // Reiniciar offset para una nueva búsqueda
-            currentPlan = null;
-            totalCount = 0;
-        }
-        
+        addMessage(pregunta, 'user-message');
+        userInput.value = '';
         addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
 
         try {
-            // 1. Obtener el plan de la IA (solo si es una nueva búsqueda)
-            let plan;
-            if (!isLoadMore) {
-                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta } });
-                if (planError) throw planError;
-                
-                // La respuesta de la función de Supabase ya viene parseada en iaResponse.data
-                const parsedResponse = iaResponse;
-                
-                // Si la IA responde con una charla, no hay plan, solo respuesta.
-                if (parsedResponse.tipo === 'charla') {
-                    chatWindow.removeChild(chatWindow.lastChild);
-                    addMessage(parsedResponse.respuesta, 'ia-message');
-                    return;
+            const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta } });
+            if (planError) throw planError;
+            chatWindow.removeChild(chatWindow.lastChild);
+
+            if (iaResponse.tipo === 'charla') {
+                addMessage(iaResponse.respuesta, 'ia-message');
+            } else if (iaResponse.tipo === 'consulta_db') {
+                const plan = iaResponse.plan;
+                let query = supabase.from(plan.tabla).select(plan.columnas);
+                if (plan.filtros) {
+                    plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
                 }
-                
-                plan = parsedResponse.plan;
-                
-                currentPlan = { ...plan, pregunta: pregunta }; // Guardar el plan para futuras paginaciones
+                if (plan.limite) {
+                    query = query.limit(plan.limite);
+                }
+
+                const { data: resultados, error: dbError, count } = await query.select(plan.accion === 'count' ? '*' : plan.columnas, { count: plan.accion === 'count' ? 'exact' : null });
+                if (dbError) throw dbError;
+
+                if (plan.accion === 'count') {
+                    addMessage(`Encontré un total de <strong>${count}</strong> registros.`, 'ia-message');
+                } else if (!resultados || resultados.length === 0) {
+                    addMessage('No encontré resultados para tu consulta.', 'ia-message');
+                } else {
+                    allResults = resultados;
+                    const tablaHTML = `
+                        <p>Encontré ${resultados.length} resultado(s). Aquí tienes un resumen:</p>
+                        <table class="tabla-resultados">
+                            <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
+                            <tbody>
+                                ${resultados.map((paciente, index) => `
+                                    <tr>
+                                        <td>${paciente.PACIENTE || 'N/A'}</td>
+                                        <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
+                                        <td>S/ ${paciente.CostoTotal || '0.00'}</td>
+                                        <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>`;
+                    addMessage(tablaHTML, 'ia-message');
+                }
             } else {
-                plan = currentPlan;
+                throw new Error("La respuesta de la IA no tiene el formato esperado.");
             }
-            
-            // 2. Ejecutar la consulta a la base de datos con paginación
-            let query = supabase.from(plan.tabla).select(plan.columnas, { count: 'exact' });
-            
-            // Aplicar filtros
-            if (plan.filtros) {
-                plan.filtros.forEach(filtro => { 
-                    // El operador 'ilike' de la IA se mapea a 'ilike' en Supabase.
-                    // Supabase usa .eq, .gt, .lt, .ilike, etc.
-                    query = query[filtro.operador](filtro.columna, filtro.valor); 
-                });
-            }
-            
-            // Aplicar rango (paginación)
-            const start = currentOffset;
-            const end = currentOffset + LIMIT - 1;
-            query = query.range(start, end);
-            
-            const { data: resultados, error: dbError, count } = await query;
-            if (dbError) throw dbError;
-            
-            chatWindow.removeChild(chatWindow.lastChild); // Eliminar "Analizando..."
-
-            // 3. Mostrar resultados
-            if (count !== null) {
-                totalCount = count;
-            }
-
-            if (!resultados || resultados.length === 0) {
-                addMessage(`No encontré más resultados para tu consulta. Total encontrados: ${totalCount}.`, 'ia-message');
-                currentPlan = null; // Detener la paginación
-            } else {
-                allResults = resultados; // Reemplazar resultados para el modal
-                
-                const tablaHTML = createResultsTable(resultados, start, totalCount);
-                addMessage(tablaHTML, 'ia-message');
-                
-                // Actualizar offset y mostrar botón de "Cargar Más" si es necesario
-                currentOffset += resultados.length;
-                updateLoadMoreButton();
-            }
-
         } catch (error) {
             console.error('Error en el proceso:', error);
-            if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) {
+            if (chatWindow.lastChild.textContent.includes('Analizando')) {
                 chatWindow.removeChild(chatWindow.lastChild);
             }
             addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
-            currentPlan = null;
-        }
-    }
-
-    function createResultsTable(resultados, start, totalCount) {
-        const end = start + resultados.length;
-        
-        let tableContent = resultados.map((paciente, index) => `
-            <tr>
-                <td>${paciente.PACIENTE || 'N/A'}</td>
-                <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
-                <td>S/ ${paciente.CostoTotal || '0.00'}</td>
-                <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
-            </tr>
-        `).join('');
-
-        const tablaHTML = `
-            <p>Mostrando registros ${start + 1} a ${end} de ${totalCount} encontrados.</p>
-            <div class="tabla-wrapper">
-                <table class="tabla-resultados">
-                    <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
-                    <tbody>${tableContent}</tbody>
-                </table>
-            </div>
-            <div class="load-more-container" id="load-more-container"></div>
-        `;
-        return tablaHTML;
-    }
-
-    function updateLoadMoreButton() {
-        const loadMoreContainer = document.getElementById('load-more-container');
-        if (!loadMoreContainer) return;
-
-        loadMoreContainer.innerHTML = ''; // Limpiar contenido anterior
-
-        if (currentOffset < totalCount && currentPlan) {
-            const button = document.createElement('button');
-            button.id = 'load-more-button';
-            button.textContent = `Cargar Siguientes ${Math.min(LIMIT, totalCount - currentOffset)} Registros`;
-            button.onclick = () => handleUserMessage(true);
-            loadMoreContainer.appendChild(button);
         }
     }
 
@@ -346,3 +255,4 @@
 
 </body>
 </html>
+
