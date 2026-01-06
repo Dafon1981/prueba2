@@ -62,6 +62,11 @@
     const modalBody = document.getElementById('modal-body');
     const closeBtn = document.querySelector('.close-btn');
     let allResults = [];
+    
+    // =================================================================
+    // ¡NUEVA VARIABLE! - Para guardar el historial de la conversación.
+    // =================================================================
+    let conversationHistory = [];
 
     // --- LÓGICA DE RECONOCIMIENTO DE VOZ (sin cambios) ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -70,13 +75,10 @@
     let isRecording = false;
     if (SpeechRecognition) {
         recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.lang = 'es-ES';
-        recognition.interimResults = true;
+        recognition.continuous = true; recognition.lang = 'es-ES'; recognition.interimResults = true;
         recognition.onresult = (event) => {
             clearTimeout(speechTimeout);
-            let interimTranscript = '';
-            let finalTranscript = '';
+            let interimTranscript = ''; let finalTranscript = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
                 else { interimTranscript += event.results[i][0].transcript; }
@@ -84,23 +86,12 @@
             userInput.value = finalTranscript + interimTranscript;
             speechTimeout = setTimeout(() => { stopRecordingAndSend(); }, 2500);
         };
-        recognition.onerror = (event) => {
-            console.error('Error en el reconocimiento de voz:', event.error);
-            addMessage(`Error de micrófono: ${event.error}`, 'error-message');
-            stopRecording();
-        };
-    } else {
-        micButton.style.display = 'none';
-        console.warn('La API de Reconocimiento de Voz no es compatible con este navegador.');
-    }
+        recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz:', event.error); addMessage(`Error de micrófono: ${event.error}`, 'error-message'); stopRecording(); };
+    } else { micButton.style.display = 'none'; console.warn('La API de Reconocimiento de Voz no es compatible con este navegador.'); }
     function toggleRecording() { if (!recognition) return; isRecording ? stopRecording() : startRecording(); }
     function startRecording() { isRecording = true; micButton.classList.add('recording'); micButton.textContent = '...'; userInput.placeholder = 'Escuchando...'; recognition.start(); }
     function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
-    function stopRecordingAndSend() {
-        if (!isRecording) return;
-        stopRecording();
-        setTimeout(() => { if (userInput.value.trim()) { handleUserMessage(); } }, 100);
-    }
+    function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) { handleUserMessage(); } }, 100); }
     micButton.addEventListener('click', toggleRecording);
 
     // --- LÓGICA DEL CHAT ---
@@ -118,62 +109,59 @@
         chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
-    // =================================================================
-    // ¡NUEVA FUNCIÓN! - Para limpiar y normalizar números.
-    // =================================================================
-    function normalizarNumero(texto) {
-        // 1. Quita todos los espacios en blanco.
-        const sinEspacios = texto.replace(/\s/g, '');
-        // 2. Comprueba si es una cadena que parece un número.
-        if (/^\d+$/.test(sinEspacios)) {
-            // 3. Si es un número, quita los ceros del principio.
-            return sinEspacios.replace(/^0+/, '');
-        }
-        // 4. Si no parece un número (contiene letras), devuélvelo como está.
-        return texto;
-    }
-
     async function handleUserMessage() {
-        let pregunta = userInput.value.trim();
+        const pregunta = userInput.value.trim();
         if (!pregunta) return;
-
-        // =================================================================
-        // ¡CAMBIO PRINCIPAL! - Normalizamos la pregunta ANTES de enviarla.
-        // =================================================================
-        const preguntaNormalizada = normalizarNumero(pregunta);
-        
-        addMessage(pregunta, 'user-message'); // Mostramos la pregunta original del usuario
+        addMessage(pregunta, 'user-message');
         userInput.value = '';
+        
+        // Añadimos la pregunta del usuario al historial
+        conversationHistory.push({ role: 'user', content: pregunta });
+
         addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
 
         try {
-            // Enviamos la pregunta NORMALIZADA a la IA
-            const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta: preguntaNormalizada } });
+            // =================================================================
+            // ¡CAMBIO PRINCIPAL! - Enviamos la pregunta Y el historial.
+            // =================================================================
+            const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { 
+                body: { 
+                    pregunta: pregunta,
+                    historial: conversationHistory.slice(-4) // Enviamos los últimos 4 mensajes para dar contexto
+                } 
+            });
+
             if (planError) throw planError;
             chatWindow.removeChild(chatWindow.lastChild);
 
             if (iaResponse.tipo === 'charla') {
                 addMessage(iaResponse.respuesta, 'ia-message');
+                // Añadimos la respuesta de la IA al historial
+                conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
             } else if (iaResponse.tipo === 'consulta_db') {
                 const plan = iaResponse.plan;
                 let query = supabase.from(plan.tabla).select(plan.columnas);
                 if (plan.filtros) {
                     plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
                 }
-                if (plan.limite) {
-                    query = query.limit(plan.limite);
-                }
+                if (plan.limite) { query = query.limit(plan.limite); }
 
                 const { data: resultados, error: dbError, count } = await query.select(plan.accion === 'count' ? '*' : plan.columnas, { count: plan.accion === 'count' ? 'exact' : null });
                 if (dbError) throw dbError;
 
+                let iaContent; // Contenido para añadir al historial
                 if (plan.accion === 'count') {
-                    addMessage(`Encontré un total de <strong>${count}</strong> registros.`, 'ia-message');
+                    iaContent = `Encontré un total de <strong>${count}</strong> registros.`;
+                    addMessage(iaContent, 'ia-message');
                 } else if (!resultados || resultados.length === 0) {
-                    addMessage('No encontré resultados para tu consulta.', 'ia-message');
+                    iaContent = 'No encontré resultados para tu consulta.';
+                    addMessage(iaContent, 'ia-message');
                 } else {
                     allResults = resultados;
-                    const tablaHTML = `
+                    iaContent = `Encontré ${resultados.length} resultado(s).`; // Solo el texto para el historial
+                    const tablaHTML = `<p>${iaContent} Aquí tienes un resumen:</p><table class="tabla-resultados">...</table>`; // (El resto de la tabla)
+                    // (Código de la tabla sin cambios)
+                    const tablaCompletaHTML = `
                         <p>Encontré ${resultados.length} resultado(s). Aquí tienes un resumen:</p>
                         <table class="tabla-resultados">
                             <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
@@ -188,8 +176,9 @@
                                 `).join('')}
                             </tbody>
                         </table>`;
-                    addMessage(tablaHTML, 'ia-message');
+                    addMessage(tablaCompletaHTML, 'ia-message');
                 }
+                conversationHistory.push({ role: 'assistant', content: iaContent });
             } else {
                 throw new Error("La respuesta de la IA no tiene el formato esperado.");
             }
