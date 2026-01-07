@@ -8,9 +8,29 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
         /* --- Todos los estilos permanecen exactamente iguales --- */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; }
+       body, html { 
+    margin: 0; 
+    padding: 0; 
+    width: 100%; 
+    height: 100vh; 
+    overflow: hidden; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+    
+    /* ¡ESTE ES EL NUEVO FONDO! */
+    background: url('https://raw.githubusercontent.com/Dafon1981/recepcion_emergencia/main/fondoappregistro.jpg' ) no-repeat center center fixed;
+    background-size: cover; 
+}
+
         #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4 ); }
-        .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed; background-size: cover; }
+       .main-container { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    width: 100%; 
+    height: 100%; 
+    /* Ya no necesita el fondo, será transparente para mostrar el del body */
+}
+
         #login-view { text-align: center; color: white; background: rgba(0, 0, 0, 0.6); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
         #login-view h1 { font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
         #login-view .input-group { margin-bottom: 20px; }
@@ -255,5 +275,6 @@
 
 </body>
 </html>
+
 
 
