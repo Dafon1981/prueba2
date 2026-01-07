@@ -4,82 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Recepción de Emergencia</title>
-    <!-- Cargamos el SDK de Supabase desde el CDN oficial -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
+    
+    <!-- Usamos la V1 del SDK de Supabase, que es la estable para este caso -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-        .main-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            /* Fondo de la app de recepción original */
-            background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed;
-            background-size: cover;
-        }
-        .login-container {
-            text-align: center;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            width: 90%;
-            max-width: 400px;
-        }
-        .login-container h1 {
-            font-size: 2.2em;
-            margin-bottom: 30px;
-            color: #333;
-        }
-        .login-container .input-group {
-            margin-bottom: 20px;
-        }
-        .login-container input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        .login-container .login-button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: background-color 0.3s;
-        }
-        .login-container .login-button:hover {
-            background-color: #0056b3;
-        }
-        .login-container #error-message {
-            color: #c62828;
-            margin-top: 15px;
-            height: 20px;
-            font-weight: 500;
-        }
-        .login-container .whatsapp-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #0056b3;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        .login-container .whatsapp-link:hover {
-            text-decoration: underline;
-        }
+        /* --- Los estilos son los mismos, no han cambiado --- */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed; background-size: cover; }
+        .login-container { text-align: center; background: rgba(255, 255, 255, 0.9); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 90%; max-width: 400px; }
+        .login-container h1 { font-size: 2.2em; margin-bottom: 30px; color: #333; }
+        .login-container .input-group { margin-bottom: 20px; }
+        .login-container input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .login-container .login-button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; transition: background-color 0.3s; }
+        .login-container .login-button:hover { background-color: #0056b3; }
+        .login-container #error-message { color: #c62828; margin-top: 15px; height: 20px; font-weight: 500; }
+        .login-container .whatsapp-link { display: inline-block; margin-top: 20px; color: #0056b3; text-decoration: none; font-size: 14px; }
+        .login-container .whatsapp-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -91,7 +32,7 @@
                 <input type="text" id="username" placeholder="Usuario" required>
             </div>
             <div class="input-group">
-                <input type="text" id="password" placeholder="Contraseña" required>
+                <input type="text" id="password" placeholder="Clave" required>
             </div>
             <button id="login-button" class="login-button">Entrar</button>
             <p id="error-message"></p>
@@ -104,49 +45,45 @@
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         
-        // ¡INICIALIZACIÓN CORRECTA Y AISLADA!
-        // Esta es la forma a prueba de fallos de inicializar el cliente cuando se carga desde el CDN.
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey );
 
         const loginButton = document.getElementById('login-button');
         const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
+        const passwordInput = document.getElementById('password'); // Este es el input de la clave
         const errorMessage = document.getElementById('error-message');
 
         // --- LÓGICA DE LOGIN ---
         const handleLogin = async () => {
             const user = usernameInput.value.trim();
-            const pass = passwordInput.value.trim();
+            const pass = passwordInput.value.trim(); // Obtenemos el valor del input de la clave
 
             if (!user || !pass) {
-                errorMessage.textContent = 'Por favor, ingrese usuario y contraseña.';
+                errorMessage.textContent = 'Por favor, ingrese usuario y clave.';
                 return;
             }
             errorMessage.textContent = 'Verificando...';
 
             try {
-                // La consulta a la tabla 'usuarios'
+                // =================================================================
+                // ¡CORRECCIÓN DEFINITIVA! - Usamos la columna 'clave' de tu tabla.
+                // =================================================================
                 const { data, error } = await supabase
                     .from('usuarios')
                     .select('*')
                     .eq('usuario', user)
-                    .eq('contrasena', pass)
-                    .single(); // .single() espera un único resultado o ninguno.
+                    .eq('clave', pass) // <-- ¡CORREGIDO!
+                    .single();
 
-                // Si hay un error y NO es el error esperado de "fila no encontrada"
                 if (error && error.code !== 'PGRST116') {
                     throw error;
                 }
 
-                // Si 'data' existe, el usuario y contraseña son correctos
                 if (data) {
                     errorMessage.textContent = '¡Éxito! Redirigiendo...';
-                    // Guardamos una bandera en el navegador para que la otra página sepa que estamos logueados.
                     sessionStorage.setItem('isLoggedIn', 'true');
-                    // Redirigimos a la página del chat.
                     window.location.href = 'chat.html';
                 } else {
-                    errorMessage.textContent = 'Usuario o contraseña incorrectos.';
+                    errorMessage.textContent = 'Usuario o clave incorrectos.';
                 }
             } catch (error) {
                 console.error('Error detallado en el login:', error);
@@ -154,18 +91,9 @@
             }
         };
 
-        // Asignamos la función al botón y a la tecla Enter
         loginButton.addEventListener('click', handleLogin);
-        passwordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
-        usernameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleLogin();
-            }
-        });
+        passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { handleLogin(); } });
+        usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { handleLogin(); } });
     </script>
 
 </body>
