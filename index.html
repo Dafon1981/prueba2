@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recepción de Emergencia con Chat IA</title>
-    <!-- La versión del SDK es correcta, el problema estaba en el JS -->
+    <!-- Usamos la versión del SDK que tenías en tu código funcional -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
         /* --- Todos los estilos permanecen exactamente iguales --- */
@@ -77,17 +77,19 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         
         // =================================================================
-        // ¡CORRECCIÓN DEFINITIVA! - Así se inicializa el cliente en v2
+        // ¡CORRECCIÓN DEFINITIVA! - Volvemos a la sintaxis que SÍ funciona con el CDN.
         // =================================================================
-        const { createClient } = supabase;
-        const supabaseClient = createClient(supabaseUrl, supabaseKey );
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
+        // Elementos de la vista de Login
         const loginView = document.getElementById('login-view');
         const videoBackground = document.getElementById('video-background');
         const loginButton = document.getElementById('login-button');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('error-message');
+        
+        // Elementos de la vista de Chat
         const chatView = document.getElementById('chat-view');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
@@ -99,7 +101,7 @@
         let allResults = [];
         let conversationHistory = [];
 
-        // --- LÓGICA DE LOGIN (usando la variable corregida 'supabaseClient') ---
+        // --- LÓGICA DE LOGIN (usando la variable 'supabase' que ahora sí existe) ---
         loginButton.addEventListener('click', async () => {
             const user = usernameInput.value.trim();
             const pass = passwordInput.value.trim();
@@ -107,7 +109,7 @@
             errorMessage.textContent = 'Verificando...';
 
             try {
-                const { data, error } = await supabaseClient // <--- USO CORREGIDO
+                const { data, error } = await supabase // <--- USO CORRECTO
                     .from('usuarios')
                     .select('*')
                     .eq('usuario', user)
@@ -130,7 +132,7 @@
             }
         });
 
-        // --- LÓGICA DEL CHAT (usando la variable corregida 'supabaseClient') ---
+        // --- LÓGICA DEL CHAT (usando la variable 'supabase' que ahora sí existe) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let speechTimeout;
@@ -177,7 +179,7 @@
             addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
 
             try {
-                const { data: iaResponse, error: planError } = await supabaseClient.functions.invoke('chat-con-ia', { // <--- USO CORREGIDO
+                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { // <--- USO CORRECTO
                     body: { pregunta: pregunta, historial: conversationHistory.slice(-4) } 
                 });
                 if (planError) throw planError;
@@ -188,7 +190,7 @@
                     conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
                 } else if (iaResponse.tipo === 'consulta_db') {
                     const plan = iaResponse.plan;
-                    let query = supabaseClient.from(plan.tabla).select(plan.columnas); // <--- USO CORREGIDO
+                    let query = supabase.from(plan.tabla).select(plan.columnas); // <--- USO CORRECTO
                     if (plan.filtros) {
                         plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
                     }
