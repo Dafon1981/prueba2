@@ -3,114 +3,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Recepción de Emergencia</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <title>Recepción de Emergencia con Chat IA</title>
+    <!-- Usamos la versión del SDK que tenías en tu código funcional -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- Los estilos son los mismos, no han cambiado --- */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        /* --- Todos los estilos permanecen exactamente iguales --- */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; }
+        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4 ); }
         .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed; background-size: cover; }
-        .login-container { text-align: center; background: rgba(255, 255, 255, 0.9); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); width: 90%; max-width: 400px; }
-        .login-container h1 { font-size: 2.2em; margin-bottom: 30px; color: #333; }
-        .login-container .input-group { margin-bottom: 20px; }
-        .login-container input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .login-container .login-button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: background-color 0.3s;
-        }
-        .login-container .login-button:hover { background-color: #0056b3; }
-        /* ¡NUEVO ESTILO! Para el botón cuando el login es exitoso */
-        .login-container .login-button.success {
-            background-color: #28a745; /* Verde de éxito */
-            cursor: default;
-        }
-        .login-container #error-message { color: #c62828; margin-top: 15px; height: 20px; font-weight: 500; }
-        .login-container .whatsapp-link { display: inline-block; margin-top: 20px; color: #0056b3; text-decoration: none; font-size: 14px; }
-        .login-container .whatsapp-link:hover { text-decoration: underline; }
+        #login-view { text-align: center; color: white; background: rgba(0, 0, 0, 0.6); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
+        #login-view h1 { font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
+        #login-view .input-group { margin-bottom: 20px; }
+        #login-view input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        #login-view .login-button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; transition: background-color 0.3s; }
+        #login-view .login-button:hover { background-color: #0056b3; }
+        #login-view #error-message { color: #ffcdd2; margin-top: 15px; height: 20px; }
+        #login-view .whatsapp-link { display: inline-block; margin-top: 20px; color: #aed5ff; text-decoration: none; font-size: 14px; }
+        #login-view .whatsapp-link:hover { text-decoration: underline; }
+        .chat-container { width: 90%; max-width: 800px; height: 90vh; background: rgba(255, 255, 255, 0.95); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
+        .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; max-width: 95%; line-height: 1.4; }
+        .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
+        .ia-message { background-color: #e9e9eb; color: #333; align-self: flex-start; }
+        .error-message { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
+        #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; align-items: center; }
+        #user-input { flex-grow: 1; padding: 12px 15px; border: 1px solid #ccc; border-radius: 20px; font-size: 16px; resize: none; }
+        .action-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 45px; height: 45px; margin-left: 10px; font-size: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s, transform 0.2s; }
+        #mic-button.recording { background-color: #dc3545; transform: scale(1.1); }
+        .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+        .ver-mas-btn { background: none; border: none; color: #007bff; cursor: pointer; text-decoration: underline; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 500px; border-radius: 10px; }
+        .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .ficha-detalle { font-size: 16px; margin-bottom: 8px; }
+        .ficha-detalle strong { color: #333; min-width: 120px; display: inline-block; }
     </style>
 </head>
 <body>
 
+    <video autoplay muted loop id="video-background">
+        <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p ).mp4" type="video/mp4">
+    </video>
+
     <div class="main-container">
-        <div class="login-container">
+        <div id="login-view">
             <h1>Recepción de Emergencia</h1>
-            <div class="input-group">
-                <input type="text" id="username" placeholder="Usuario" required>
-            </div>
-            <div class="input-group">
-                <input type="text" id="password" placeholder="Clave" required>
-            </div>
+            <div class="input-group"><input type="text" id="username" placeholder="Usuario" required></div>
+            <div class="input-group"><input type="text" id="password" placeholder="Contraseña" required></div>
             <button id="login-button" class="login-button">Entrar</button>
             <p id="error-message"></p>
             <a href="https://wa.me/51967188120?text=Hola,%20necesito%20una%20clave%20de%20ingreso%20para%20el%20sistema." target="_blank" class="whatsapp-link">No tienes usuario</a>
         </div>
+        <div id="chat-view" class="chat-container" style="display: none;">
+            <div id="chat-window"></div>
+            <div id="input-area">
+                <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono..."><button id="mic-button" class="action-button">🎤</button><button id="send-button" class="action-button">→</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailsModal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3>Detalles Completos del Registro</h3>
+        <div id="modal-body"></div>
+      </div>
     </div>
 
     <script>
+        // --- CONFIGURACIÓN Y ELEMENTOS GLOBALES ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey );
+        
+        // =================================================================
+        // ¡CORRECCIÓN DEFINITIVA! - Volvemos a la sintaxis que SÍ funciona con el CDN.
+        // =================================================================
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
+        // Elementos de la vista de Login
+        const loginView = document.getElementById('login-view');
+        const videoBackground = document.getElementById('video-background');
         const loginButton = document.getElementById('login-button');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('error-message');
+        
+        // Elementos de la vista de Chat
+        const chatView = document.getElementById('chat-view');
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const micButton = document.getElementById('mic-button');
+        const modal = document.getElementById('detailsModal');
+        const modalBody = document.getElementById('modal-body');
+        const closeBtn = document.querySelector('.close-btn');
+        let allResults = [];
+        let conversationHistory = [];
 
-        const handleLogin = async () => {
+        // --- LÓGICA DE LOGIN (usando la variable 'supabase' que ahora sí existe) ---
+        loginButton.addEventListener('click', async () => {
             const user = usernameInput.value.trim();
             const pass = passwordInput.value.trim();
-
-            if (!user || !pass) {
-                errorMessage.textContent = 'Por favor, ingrese usuario y clave.';
-                return;
-            }
+            if (!user || !pass) { errorMessage.textContent = 'Por favor, ingrese usuario y contraseña.'; return; }
             errorMessage.textContent = 'Verificando...';
-            loginButton.disabled = true; // Deshabilitamos el botón mientras se verifica
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabase // <--- USO CORRECTO
                     .from('usuarios')
                     .select('*')
                     .eq('usuario', user)
-                    .eq('clave', pass)
+                    .eq('contrasena', pass)
                     .single();
 
                 if (error && error.code !== 'PGRST116') throw error;
 
                 if (data) {
-                    // =================================================================
-                    // ¡MEJORA DE UX! - Confirmación visual antes de redirigir.
-                    // =================================================================
-                    errorMessage.textContent = ''; // Limpiamos cualquier mensaje de error previo
-                    loginButton.textContent = '¡Éxito!';
-                    loginButton.classList.add('success'); // Añadimos la clase para ponerlo verde
-
-                    // Esperamos 1 segundo para que el usuario vea el mensaje de éxito
-                    setTimeout(() => {
-                        sessionStorage.setItem('isLoggedIn', 'true');
-                        window.location.href = 'chat.html';
-                    }, 1000); // 1000 milisegundos = 1 segundo
-
+                    loginView.style.display = 'none';
+                    videoBackground.style.display = 'none';
+                    chatView.style.display = 'flex';
+                    addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
                 } else {
-                    errorMessage.textContent = 'Usuario o clave incorrectos.';
-                    loginButton.disabled = false; // Habilitamos el botón de nuevo si falla
+                    errorMessage.textContent = 'Usuario o contraseña incorrectos.';
                 }
             } catch (error) {
-                console.error('Error detallado en el login:', error);
+                console.error('Error en el login:', error);
                 errorMessage.textContent = 'Error al conectar con el servidor.';
-                loginButton.disabled = false; // Habilitamos el botón de nuevo si falla
             }
-        };
+        });
 
-        loginButton.addEventListener('click', handleLogin);
-        passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { handleLogin(); } });
-        usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { handleLogin(); } });
+        // --- LÓGICA DEL CHAT (usando la variable 'supabase' que ahora sí existe) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        let speechTimeout;
+        let isRecording = false;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true; recognition.lang = 'es-ES'; recognition.interimResults = true;
+            recognition.onresult = (event) => {
+                clearTimeout(speechTimeout);
+                let interimTranscript = ''; let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
+                    else { interimTranscript += event.results[i][0].transcript; }
+                }
+                userInput.value = finalTranscript + interimTranscript;
+                speechTimeout = setTimeout(() => { stopRecordingAndSend(); }, 2500);
+            };
+            recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz:', event.error); addMessage(`Error de micrófono: ${event.error}`, 'error-message'); stopRecording(); };
+        } else { micButton.style.display = 'none'; }
+        function toggleRecording() { if (!recognition) return; isRecording ? stopRecording() : startRecording(); }
+        function startRecording() { isRecording = true; micButton.classList.add('recording'); micButton.textContent = '...'; userInput.placeholder = 'Escuchando...'; recognition.start(); }
+        function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
+        function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) { handleUserMessage(); } }, 100); }
+        micButton.addEventListener('click', toggleRecording);
+        sendButton.addEventListener('click', handleUserMessage);
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
+        closeBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (event) => { if (event.target == modal) { modal.style.display = "none"; } };
+
+        function addMessage(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', type);
+            messageDiv.innerHTML = content;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        async function handleUserMessage() {
+            const pregunta = userInput.value.trim();
+            if (!pregunta) return;
+            addMessage(pregunta, 'user-message');
+            userInput.value = '';
+            conversationHistory.push({ role: 'user', content: pregunta });
+            addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
+
+            try {
+                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { // <--- USO CORRECTO
+                    body: { pregunta: pregunta, historial: conversationHistory.slice(-4) } 
+                });
+                if (planError) throw planError;
+                chatWindow.removeChild(chatWindow.lastChild);
+
+                if (iaResponse.tipo === 'charla') {
+                    addMessage(iaResponse.respuesta, 'ia-message');
+                    conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
+                } else if (iaResponse.tipo === 'consulta_db') {
+                    const plan = iaResponse.plan;
+                    let query = supabase.from(plan.tabla).select(plan.columnas); // <--- USO CORRECTO
+                    if (plan.filtros) {
+                        plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
+                    }
+                    if (plan.limite) { query = query.limit(plan.limite); }
+
+                    const { data: resultados, error: dbError, count } = await query.select(plan.accion === 'count' ? '*' : plan.columnas, { count: plan.accion === 'count' ? 'exact' : null });
+                    if (dbError) throw dbError;
+
+                    let iaContent;
+                    if (plan.accion === 'count') {
+                        iaContent = `Encontré un total de <strong>${count}</strong> registros.`;
+                        addMessage(iaContent, 'ia-message');
+                    } else if (!resultados || resultados.length === 0) {
+                        iaContent = 'No encontré resultados para tu consulta.';
+                        addMessage(iaContent, 'ia-message');
+                    } else {
+                        allResults = resultados;
+                        iaContent = `Encontré ${resultados.length} resultado(s).`;
+                        const tablaHTML = `
+                            <p>${iaContent} Aquí tienes un resumen:</p>
+                            <table class="tabla-resultados">
+                                <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
+                                <tbody>
+                                    ${resultados.map((paciente, index) => `
+                                        <tr>
+                                            <td>${paciente.PACIENTE || 'N/A'}</td>
+                                            <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
+                                            <td>S/ ${paciente.CostoTotal || '0.00'}</td>
+                                            <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>`;
+                        addMessage(tablaHTML, 'ia-message');
+                    }
+                    conversationHistory.push({ role: 'assistant', content: iaContent });
+                } else {
+                    throw new Error("La respuesta de la IA no tiene el formato esperado.");
+                }
+            } catch (error) {
+                console.error('Error en el proceso:', error);
+                if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) {
+                    chatWindow.removeChild(chatWindow.lastChild);
+                }
+                addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
+            }
+        }
+
+        function showDetails(index) {
+            const item = allResults[index];
+            if (!item) return;
+            let detailsHTML = '';
+            for (const key in item) {
+                if (key !== 'id') {
+                    detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
+                }
+            }
+            modalBody.innerHTML = detailsHTML;
+            modal.style.display = "block";
+        }
     </script>
 
 </body>
