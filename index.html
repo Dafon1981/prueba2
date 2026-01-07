@@ -113,7 +113,7 @@
                     .from('usuarios')
                     .select('*')
                     .eq('usuario', user)
-                    .eq('contrasena', pass)
+                    .eq('clave', pass)
                     .single();
 
                 if (error && error.code !== 'PGRST116') throw error;
@@ -255,3 +255,4 @@
 
 </body>
 </html>
+
