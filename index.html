@@ -4,104 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recepción de Emergencia con Chat IA</title>
+    <!-- La versión del SDK es correcta, el problema estaba en el JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS GENERALES Y DE LOGIN --- */
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: #f0f2f5; /* Color de fondo de respaldo */
-        }
-
-        /* Contenedor para el video de fondo */
-        #video-background {
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            min-width: 100%;
-            min-height: 100%;
-            width: auto;
-            height: auto;
-            z-index: -1;
-            filter: brightness(0.4 ); /* Oscurece el video para que el texto resalte */
-        }
-
-        /* Contenedor principal que ocupa toda la pantalla */
-        .main-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
-            /* Fondo de la app de recepción original */
-            background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed;
-            background-size: cover;
-        }
-
-        /* Vista de Login */
-        #login-view {
-            text-align: center;
-            color: white;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 90%;
-            max-width: 400px;
-        }
-        #login-view h1 {
-            font-size: 2.5em;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
-        }
-        #login-view .input-group {
-            margin-bottom: 20px;
-        }
-        #login-view input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        #login-view .login-button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 18px;
-            transition: background-color 0.3s;
-        }
+        /* --- Todos los estilos permanecen exactamente iguales --- */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; }
+        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4 ); }
+        .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed; background-size: cover; }
+        #login-view { text-align: center; color: white; background: rgba(0, 0, 0, 0.6); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
+        #login-view h1 { font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
+        #login-view .input-group { margin-bottom: 20px; }
+        #login-view input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        #login-view .login-button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; transition: background-color 0.3s; }
         #login-view .login-button:hover { background-color: #0056b3; }
         #login-view #error-message { color: #ffcdd2; margin-top: 15px; height: 20px; }
-        #login-view .whatsapp-link {
-            display: inline-block;
-            margin-top: 20px;
-            color: #aed5ff;
-            text-decoration: none;
-            font-size: 14px;
-        }
+        #login-view .whatsapp-link { display: inline-block; margin-top: 20px; color: #aed5ff; text-decoration: none; font-size: 14px; }
         #login-view .whatsapp-link:hover { text-decoration: underline; }
-
-        /* --- ESTILOS DEL CHAT (Adaptados del último HTML) --- */
-        .chat-container {
-            width: 90%;
-            max-width: 800px;
-            height: 90vh;
-            background: rgba(255, 255, 255, 0.95); /* Fondo semi-transparente para ver el fondo general */
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-        }
+        .chat-container { width: 90%; max-width: 800px; height: 90vh; background: rgba(255, 255, 255, 0.95); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
         #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
         .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; max-width: 95%; line-height: 1.4; }
         .user-message { background-color: #007bff; color: white; align-self: flex-end; margin-left: auto; }
@@ -123,40 +42,27 @@
 </head>
 <body>
 
-    <!-- Video de fondo, se muestra solo durante el login -->
     <video autoplay muted loop id="video-background">
         <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p ).mp4" type="video/mp4">
     </video>
 
     <div class="main-container">
-        
-        <!-- VISTA DE LOGIN (se oculta después del login) -->
         <div id="login-view">
             <h1>Recepción de Emergencia</h1>
-            <div class="input-group">
-                <input type="text" id="username" placeholder="Usuario" required>
-            </div>
-            <div class="input-group">
-                <input type="text" id="password" placeholder="Contraseña" required>
-            </div>
+            <div class="input-group"><input type="text" id="username" placeholder="Usuario" required></div>
+            <div class="input-group"><input type="text" id="password" placeholder="Contraseña" required></div>
             <button id="login-button" class="login-button">Entrar</button>
             <p id="error-message"></p>
             <a href="https://wa.me/51967188120?text=Hola,%20necesito%20una%20clave%20de%20ingreso%20para%20el%20sistema." target="_blank" class="whatsapp-link">No tienes usuario</a>
         </div>
-
-        <!-- VISTA DE CHAT (oculta por defecto ) -->
         <div id="chat-view" class="chat-container" style="display: none;">
             <div id="chat-window"></div>
             <div id="input-area">
-                <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
-                <button id="mic-button" class="action-button">🎤</button>
-                <button id="send-button" class="action-button">→</button>
+                <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono..."><button id="mic-button" class="action-button">🎤</button><button id="send-button" class="action-button">→</button>
             </div>
         </div>
-
     </div>
 
-    <!-- MODAL (fuera del contenedor principal para que se superponga) -->
     <div id="detailsModal" class="modal">
       <div class="modal-content">
         <span class="close-btn">&times;</span>
@@ -169,17 +75,19 @@
         // --- CONFIGURACIÓN Y ELEMENTOS GLOBALES ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
+        
+        // =================================================================
+        // ¡CORRECCIÓN DEFINITIVA! - Así se inicializa el cliente en v2
+        // =================================================================
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseUrl, supabaseKey );
 
-        // Elementos de la vista de Login
         const loginView = document.getElementById('login-view');
         const videoBackground = document.getElementById('video-background');
         const loginButton = document.getElementById('login-button');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('error-message');
-
-        // Elementos de la vista de Chat
         const chatView = document.getElementById('chat-view');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
@@ -188,23 +96,18 @@
         const modal = document.getElementById('detailsModal');
         const modalBody = document.getElementById('modal-body');
         const closeBtn = document.querySelector('.close-btn');
-        
         let allResults = [];
         let conversationHistory = [];
 
-        // --- LÓGICA DE LOGIN ---
+        // --- LÓGICA DE LOGIN (usando la variable corregida 'supabaseClient') ---
         loginButton.addEventListener('click', async () => {
             const user = usernameInput.value.trim();
             const pass = passwordInput.value.trim();
-
-            if (!user || !pass) {
-                errorMessage.textContent = 'Por favor, ingrese usuario y contraseña.';
-                return;
-            }
+            if (!user || !pass) { errorMessage.textContent = 'Por favor, ingrese usuario y contraseña.'; return; }
             errorMessage.textContent = 'Verificando...';
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabaseClient // <--- USO CORREGIDO
                     .from('usuarios')
                     .select('*')
                     .eq('usuario', user)
@@ -214,10 +117,9 @@
                 if (error && error.code !== 'PGRST116') throw error;
 
                 if (data) {
-                    // ¡Éxito! Ocultamos la vista de login y mostramos la del chat.
                     loginView.style.display = 'none';
-                    videoBackground.style.display = 'none'; // Ocultamos también el video
-                    chatView.style.display = 'flex'; // 'flex' para que use el layout de flexbox
+                    videoBackground.style.display = 'none';
+                    chatView.style.display = 'flex';
                     addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
                 } else {
                     errorMessage.textContent = 'Usuario o contraseña incorrectos.';
@@ -228,9 +130,7 @@
             }
         });
 
-        // --- LÓGICA DEL CHAT (exactamente la misma que en tu último HTML) ---
-        
-        // Lógica de Reconocimiento de Voz
+        // --- LÓGICA DEL CHAT (usando la variable corregida 'supabaseClient') ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let speechTimeout;
@@ -255,8 +155,6 @@
         function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
         function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) { handleUserMessage(); } }, 100); }
         micButton.addEventListener('click', toggleRecording);
-
-        // Lógica de envío y recepción de mensajes
         sendButton.addEventListener('click', handleUserMessage);
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
         closeBtn.onclick = () => modal.style.display = "none";
@@ -279,11 +177,8 @@
             addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
 
             try {
-                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { 
-                    body: { 
-                        pregunta: pregunta,
-                        historial: conversationHistory.slice(-4)
-                    } 
+                const { data: iaResponse, error: planError } = await supabaseClient.functions.invoke('chat-con-ia', { // <--- USO CORREGIDO
+                    body: { pregunta: pregunta, historial: conversationHistory.slice(-4) } 
                 });
                 if (planError) throw planError;
                 chatWindow.removeChild(chatWindow.lastChild);
@@ -293,7 +188,7 @@
                     conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
                 } else if (iaResponse.tipo === 'consulta_db') {
                     const plan = iaResponse.plan;
-                    let query = supabase.from(plan.tabla).select(plan.columnas);
+                    let query = supabaseClient.from(plan.tabla).select(plan.columnas); // <--- USO CORREGIDO
                     if (plan.filtros) {
                         plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
                     }
@@ -335,7 +230,7 @@
                 }
             } catch (error) {
                 console.error('Error en el proceso:', error);
-                if (chatWindow.lastChild.textContent.includes('Analizando')) {
+                if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) {
                     chatWindow.removeChild(chatWindow.lastChild);
                 }
                 addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
