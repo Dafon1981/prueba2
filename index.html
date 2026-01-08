@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recepción de Emergencia con Chat IA</title>
-    <!-- La versión del SDK es la que te funciona -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <!-- Usamos la versión del SDK que tenías en tu código funcional -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- Todos tus estilos originales, sin cambios --- */
+        /* --- Todos los estilos permanecen exactamente iguales --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; }
-        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4  ); }
-        .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg'  ) no-repeat center center fixed; background-size: cover; }
+        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4 ); }
+        .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed; background-size: cover; }
         #login-view { text-align: center; color: white; background: rgba(0, 0, 0, 0.6); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
         #login-view h1 { font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
         #login-view .input-group { margin-bottom: 20px; }
@@ -43,14 +43,14 @@
 <body>
 
     <video autoplay muted loop id="video-background">
-        <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p  ).mp4" type="video/mp4">
+        <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p ).mp4" type="video/mp4">
     </video>
 
     <div class="main-container">
         <div id="login-view">
             <h1>Recepción de Emergencia</h1>
             <div class="input-group"><input type="text" id="username" placeholder="Usuario" required></div>
-            <div class="input-group"><input type="text" id="password" placeholder="Clave" required></div>
+            <div class="input-group"><input type="text" id="password" placeholder="Contraseña" required></div>
             <button id="login-button" class="login-button">Entrar</button>
             <p id="error-message"></p>
             <a href="https://wa.me/51967188120?text=Hola,%20necesito%20una%20clave%20de%20ingreso%20para%20el%20sistema." target="_blank" class="whatsapp-link">No tienes usuario</a>
@@ -72,17 +72,24 @@
     </div>
 
     <script>
-        // --- CONFIGURACIÓN Y ELEMENTOS GLOBALES (sin cambios ) ---
+        // --- CONFIGURACIÓN Y ELEMENTOS GLOBALES ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey  );
+        
+        // =================================================================
+        // ¡CORRECCIÓN DEFINITIVA! - Volvemos a la sintaxis que SÍ funciona con el CDN.
+        // =================================================================
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
+        // Elementos de la vista de Login
         const loginView = document.getElementById('login-view');
         const videoBackground = document.getElementById('video-background');
         const loginButton = document.getElementById('login-button');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('error-message');
+        
+        // Elementos de la vista de Chat
         const chatView = document.getElementById('chat-view');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
@@ -94,15 +101,15 @@
         let allResults = [];
         let conversationHistory = [];
 
-        // --- LÓGICA DE LOGIN (sin cambios) ---
+        // --- LÓGICA DE LOGIN (usando la variable 'supabase' que ahora sí existe) ---
         loginButton.addEventListener('click', async () => {
             const user = usernameInput.value.trim();
             const pass = passwordInput.value.trim();
-            if (!user || !pass) { errorMessage.textContent = 'Por favor, ingrese usuario y clave.'; return; }
+            if (!user || !pass) { errorMessage.textContent = 'Por favor, ingrese usuario y contraseña.'; return; }
             errorMessage.textContent = 'Verificando...';
 
             try {
-                const { data, error } = await supabase
+                const { data, error } = await supabase // <--- USO CORRECTO
                     .from('usuarios')
                     .select('*')
                     .eq('usuario', user)
@@ -115,10 +122,9 @@
                     loginView.style.display = 'none';
                     videoBackground.style.display = 'none';
                     chatView.style.display = 'flex';
-                    // Mensaje de bienvenida actualizado para reflejar las nuevas capacidades
-                    addMessage("¡Hola! Soy Manu. Puedo buscar registros FUA y datos de doctores. ¿Qué necesitas hoy?", 'ia-message');
+                    addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
                 } else {
-                    errorMessage.textContent = 'Usuario o clave incorrectos.';
+                    errorMessage.textContent = 'Usuario o contraseña incorrectos.';
                 }
             } catch (error) {
                 console.error('Error en el login:', error);
@@ -126,12 +132,35 @@
             }
         });
 
-        // --- LÓGICA DEL CHAT ---
+        // --- LÓGICA DEL CHAT (usando la variable 'supabase' que ahora sí existe) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        // ... (El código de reconocimiento de voz no se toca, se asume que está aquí y funciona)
-        
-        // --- EVENT LISTENERS (sin cambios) ---
-        // ... (micButton, sendButton, etc. no se tocan)
+        let recognition;
+        let speechTimeout;
+        let isRecording = false;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true; recognition.lang = 'es-ES'; recognition.interimResults = true;
+            recognition.onresult = (event) => {
+                clearTimeout(speechTimeout);
+                let interimTranscript = ''; let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
+                    else { interimTranscript += event.results[i][0].transcript; }
+                }
+                userInput.value = finalTranscript + interimTranscript;
+                speechTimeout = setTimeout(() => { stopRecordingAndSend(); }, 2500);
+            };
+            recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz:', event.error); addMessage(`Error de micrófono: ${event.error}`, 'error-message'); stopRecording(); };
+        } else { micButton.style.display = 'none'; }
+        function toggleRecording() { if (!recognition) return; isRecording ? stopRecording() : startRecording(); }
+        function startRecording() { isRecording = true; micButton.classList.add('recording'); micButton.textContent = '...'; userInput.placeholder = 'Escuchando...'; recognition.start(); }
+        function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
+        function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) { handleUserMessage(); } }, 100); }
+        micButton.addEventListener('click', toggleRecording);
+        sendButton.addEventListener('click', handleUserMessage);
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
+        closeBtn.onclick = () => modal.style.display = "none";
+        window.onclick = (event) => { if (event.target == modal) { modal.style.display = "none"; } };
 
         function addMessage(content, type) {
             const messageDiv = document.createElement('div');
@@ -141,9 +170,6 @@
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        // =================================================================
-        // ¡ÚNICA FUNCIÓN MODIFICADA! - handleUserMessage
-        // =================================================================
         async function handleUserMessage() {
             const pregunta = userInput.value.trim();
             if (!pregunta) return;
@@ -153,7 +179,7 @@
             addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
 
             try {
-                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', {
+                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { // <--- USO CORRECTO
                     body: { pregunta: pregunta, historial: conversationHistory.slice(-4) } 
                 });
                 if (planError) throw planError;
@@ -164,34 +190,40 @@
                     conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
                 } else if (iaResponse.tipo === 'consulta_db') {
                     const plan = iaResponse.plan;
-                    let query = supabase.from(plan.tabla).select(plan.columnas);
+                    let query = supabase.from(plan.tabla).select(plan.columnas); // <--- USO CORRECTO
                     if (plan.filtros) {
                         plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
                     }
                     if (plan.limite) { query = query.limit(plan.limite); }
 
-                    // La consulta a la DB no cambia
-                    const { data: resultados, error: dbError } = await query;
+                    const { data: resultados, error: dbError, count } = await query.select(plan.accion === 'count' ? '*' : plan.columnas, { count: plan.accion === 'count' ? 'exact' : null });
                     if (dbError) throw dbError;
 
                     let iaContent;
-                    if (!resultados || resultados.length === 0) {
+                    if (plan.accion === 'count') {
+                        iaContent = `Encontré un total de <strong>${count}</strong> registros.`;
+                        addMessage(iaContent, 'ia-message');
+                    } else if (!resultados || resultados.length === 0) {
                         iaContent = 'No encontré resultados para tu consulta.';
                         addMessage(iaContent, 'ia-message');
                     } else {
                         allResults = resultados;
                         iaContent = `Encontré ${resultados.length} resultado(s).`;
-                        
-                        // =================================================================
-                        // ¡NUEVA LÓGICA AÑADIDA! - Decide qué tabla dibujar
-                        // =================================================================
-                        let tablaHTML;
-                        if (plan.tabla === 'doctores') {
-                            tablaHTML = generarTablaDoctoresHTML(resultados);
-                        } else {
-                            // Mantiene el comportamiento original para la tabla 'registros'
-                            tablaHTML = generarTablaRegistrosHTML(resultados);
-                        }
+                        const tablaHTML = `
+                            <p>${iaContent} Aquí tienes un resumen:</p>
+                            <table class="tabla-resultados">
+                                <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
+                                <tbody>
+                                    ${resultados.map((paciente, index) => `
+                                        <tr>
+                                            <td>${paciente.PACIENTE || 'N/A'}</td>
+                                            <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
+                                            <td>S/ ${paciente.CostoTotal || '0.00'}</td>
+                                            <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>`;
                         addMessage(tablaHTML, 'ia-message');
                     }
                     conversationHistory.push({ role: 'assistant', content: iaContent });
@@ -207,77 +239,21 @@
             }
         }
 
-        // =================================================================
-        // ¡NUEVAS FUNCIONES AÑADIDAS! - Para dibujar las tablas
-        // =================================================================
-
-        // Función para dibujar la tabla de doctores
-        function generarTablaDoctoresHTML(doctores) {
-            return `
-                <p>Encontré ${doctores.length} doctor(es). Aquí tienes un resumen:</p>
-                <table class="tabla-resultados">
-                    <thead><tr><th>Nombre</th><th>Especialidad</th><th>RNE</th><th>Acción</th></tr></thead>
-                    <tbody>
-                        ${doctores.map((doctor, index) => `
-                            <tr>
-                                <td>${doctor.nombre || 'N/A'}</td>
-                                <td>${doctor.especialidad || 'N/A'}</td>
-                                <td>${doctor.rne || 'N/A'}</td>
-                                <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>`;
-        }
-
-        // Tu función original para dibujar la tabla de registros, ahora con un nombre claro
-        function generarTablaRegistrosHTML(registros) {
-            const iaContent = `Encontré ${registros.length} resultado(s).`;
-            return `
-                <p>${iaContent} Aquí tienes un resumen:</p>
-                <table class="tabla-resultados">
-                    <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
-                    <tbody>
-                        ${registros.map((paciente, index) => `
-                            <tr>
-                                <td>${paciente.PACIENTE || 'N/A'}</td>
-                                <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
-                                <td>S/ ${paciente.CostoTotal || '0.00'}</td>
-                                <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>`;
-        }
-
-        // =================================================================
-        // ¡FUNCIÓN MODIFICADA! - showDetails ahora es más genérica
-        // =================================================================
         function showDetails(index) {
             const item = allResults[index];
             if (!item) return;
             let detailsHTML = '';
-            // Este bucle genérico funciona para cualquier objeto (doctor o paciente)
             for (const key in item) {
-                // Ocultamos campos internos que no son útiles para el usuario
-                if (key !== 'id' && key !== 'created_at') { 
+                if (key !== 'id') {
                     detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
                 }
             }
             modalBody.innerHTML = detailsHTML;
             modal.style.display = "block";
         }
-
-        // El resto de tu código JS (micrófono, listeners) va aquí para asegurar que todo siga funcionando.
-        // Por favor, copia y pega aquí el resto de tu bloque <script> que no he incluido.
-        // Ejemplo:
-        // const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        // ...etc...
-        // micButton.addEventListener('click', toggleRecording);
-        // sendButton.addEventListener('click', handleUserMessage);
-        // ...etc...
-
     </script>
 
 </body>
 </html>
+
+
