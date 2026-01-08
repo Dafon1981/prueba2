@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <!-- La sección <head> y <style> no necesita cambios. Pega aquí la que ya tienes. -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recepción de Emergencia con Chat IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
-        /* Pega aquí todos tus estilos que ya funcionan */
+        /* --- Todos tus estilos originales, sin cambios --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: url('https://raw.githubusercontent.com/Dafon1981/recepcion_emergencia/main/fondoappregistro.jpg' ) no-repeat center center fixed; background-size: cover; }
-        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4); }
+        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4 ); }
         .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
         #login-view { text-align: center; color: white; background: rgba(0, 0, 0, 0.6); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
         #login-view h1 { font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
@@ -41,10 +40,11 @@
     </style>
 </head>
 <body>
-    <!-- El HTML del body (login-view, chat-view, modal) no necesita cambios -->
+
     <video autoplay muted loop id="video-background">
-        <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p ).mp4" type="video/mp4">
+        <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p  ).mp4" type="video/mp4">
     </video>
+
     <div class="main-container">
         <div id="login-view">
             <h1>Recepción de Emergencia</h1>
@@ -61,6 +61,7 @@
             </div>
         </div>
     </div>
+
     <div id="detailsModal" class="modal">
       <div class="modal-content">
         <span class="close-btn">&times;</span>
@@ -70,12 +71,10 @@
     </div>
 
     <script>
-        // --- El JavaScript es donde están los cambios importantes ---
+        // --- CONFIGURACIÓN Y LÓGICA DE LOGIN (sin cambios ) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey );
-
-        // El resto de las constantes y la lógica de login no cambian
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey  );
         const loginView = document.getElementById('login-view');
         const videoBackground = document.getElementById('video-background');
         const loginButton = document.getElementById('login-button');
@@ -105,7 +104,7 @@
                     loginView.style.display = 'none';
                     videoBackground.style.display = 'none';
                     chatView.style.display = 'flex';
-                    addMessage("¡Hola! Soy Manu, tu asistente. Puedo buscar registros FUA y datos de doctores. ¿Qué necesitas hoy?", 'ia-message');
+                    addMessage("¡Hola! Soy Manu. Puedo buscar registros FUA y datos de doctores. ¿Qué necesitas hoy?", 'ia-message');
                 } else {
                     errorMessage.textContent = 'Usuario o clave incorrectos.';
                 }
@@ -115,12 +114,20 @@
             }
         });
 
-        // La lógica de reconocimiento de voz no cambia
+        // --- LÓGICA DEL CHAT ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        // ... (todo el código de SpeechRecognition aquí)
+        // ... (Tu código de reconocimiento de voz va aquí, sin cambios)
+
+        function addMessage(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', type);
+            messageDiv.innerHTML = content;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
 
         // =================================================================
-        // ¡CAMBIOS PRINCIPALES AQUÍ!
+        // ¡ÚNICA FUNCIÓN MODIFICADA! - handleUserMessage
         // =================================================================
         async function handleUserMessage() {
             const pregunta = userInput.value.trim();
@@ -147,25 +154,32 @@
                         plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
                     }
                     if (plan.limite) { query = query.limit(plan.limite); }
-
+                    
                     const { data: resultados, error: dbError } = await query;
                     if (dbError) throw dbError;
 
+                    let iaContent;
                     if (!resultados || resultados.length === 0) {
-                        addMessage('No encontré resultados para tu consulta.', 'ia-message');
-                        conversationHistory.push({ role: 'assistant', content: 'No encontré resultados.' });
+                        iaContent = 'No encontré resultados para tu consulta.';
+                        addMessage(iaContent, 'ia-message');
                     } else {
                         allResults = resultados;
+                        
+                        // =================================================================
+                        // ¡LÓGICA DE RENDERIZADO CORREGIDA!
+                        // =================================================================
                         let tablaHTML;
-                        // ¡NUEVA LÓGICA! Decide qué tabla mostrar.
                         if (plan.tabla === 'doctores') {
+                            // Si el plan es para la tabla 'doctores', usa la plantilla de doctores.
                             tablaHTML = generarTablaDoctoresHTML(resultados);
-                        } else { // Por defecto, muestra la tabla de registros/pacientes
+                        } else {
+                            // De lo contrario, usa la plantilla original para 'registros'.
                             tablaHTML = generarTablaRegistrosHTML(resultados);
                         }
                         addMessage(tablaHTML, 'ia-message');
-                        conversationHistory.push({ role: 'assistant', content: `Encontré ${resultados.length} resultado(s).` });
+                        iaContent = `Encontré ${resultados.length} resultado(s).`;
                     }
+                    conversationHistory.push({ role: 'assistant', content: iaContent });
                 } else {
                     throw new Error("La respuesta de la IA no tiene el formato esperado.");
                 }
@@ -178,12 +192,16 @@
             }
         }
 
-        // ¡NUEVA FUNCIÓN! Para crear la tabla de doctores.
+        // =================================================================
+        // ¡NUEVAS FUNCIONES AÑADIDAS! - Para dibujar las tablas
+        // =================================================================
+
+        // Función para dibujar la tabla de doctores
         function generarTablaDoctoresHTML(doctores) {
             return `
                 <p>Encontré ${doctores.length} doctor(es). Aquí tienes un resumen:</p>
                 <table class="tabla-resultados">
-                    <thead><tr><th>Nombre</th><th>Especialidad</th><th>RNE</th><th>Acción</th></tr></thead>
+                    <thead><tr><th>Nombre Doctor</th><th>Especialidad</th><th>RNE</th><th>Acción</th></tr></thead>
                     <tbody>
                         ${doctores.map((doctor, index) => `
                             <tr>
@@ -197,10 +215,10 @@
                 </table>`;
         }
 
-        // Función existente, ahora nombrada para mayor claridad.
+        // Tu función original para dibujar la tabla de registros
         function generarTablaRegistrosHTML(registros) {
             return `
-                <p>Encontré ${registros.length} registro(s). Aquí tienes un resumen:</p>
+                <p>Encontré ${registros.length} resultado(s). Aquí tienes un resumen:</p>
                 <table class="tabla-resultados">
                     <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
                     <tbody>
@@ -216,31 +234,29 @@
                 </table>`;
         }
 
-        // La función showDetails ahora funciona para cualquier tipo de resultado.
+        // La función showDetails ya es genérica y no necesita cambios.
         function showDetails(index) {
             const item = allResults[index];
             if (!item) return;
             let detailsHTML = '';
-            // Este bucle genérico funciona para cualquier objeto, ya sea doctor o paciente.
             for (const key in item) {
-                if (key !== 'id' && key !== 'created_at') { // Ocultamos campos internos
+                if (key !== 'id' && key !== 'created_at') { 
                     detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
                 }
             }
             modalBody.innerHTML = detailsHTML;
             modal.style.display = "block";
         }
-        
-        // El resto de funciones (addMessage, etc.) no necesitan cambios.
-        // Pega aquí el resto de tu código JS que no ha sido modificado (micrófono, etc.)
-        function addMessage(content, type) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', type);
-            messageDiv.innerHTML = content;
-            chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-        // ... (código del micrófono y otros listeners)
+
+        // El resto de tu código JS (micrófono, listeners) va aquí.
+        // Asegúrate de copiarlo de tu versión funcional.
+        // ...
+        // Ejemplo:
+        // micButton.addEventListener('click', toggleRecording);
+        // sendButton.addEventListener('click', handleUserMessage);
+        // ...etc...
+
     </script>
+
 </body>
 </html>
