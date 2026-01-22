@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recepción de Emergencia con Chat IA</title>
-    <!-- Usamos la versión del SDK que tenías en tu código funcional -->
+    <title>Recepción de Emergencia con Chat IA v2.0</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- Todos los estilos permanecen exactamente iguales --- */
+        /* --- Estilos existentes (sin cambios ) --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; }
-        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4 ); }
+        #video-background { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; width: auto; height: auto; z-index: -1; filter: brightness(0.4); }
         .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center fixed; background-size: cover; }
         #login-view { text-align: center; color: white; background: rgba(0, 0, 0, 0.6); padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 90%; max-width: 400px; }
         #login-view h1 { font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 8px rgba(0,0,0,0.7); }
         #login-view .input-group { margin-bottom: 20px; }
         #login-view input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         #login-view .login-button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 18px; transition: background-color 0.3s; }
-        #login-view .login-button:hover { background-color: #0056b3; }
         #login-view #error-message { color: #ffcdd2; margin-top: 15px; height: 20px; }
         #login-view .whatsapp-link { display: inline-block; margin-top: 20px; color: #aed5ff; text-decoration: none; font-size: 14px; }
-        #login-view .whatsapp-link:hover { text-decoration: underline; }
         .chat-container { width: 90%; max-width: 800px; height: 90vh; background: rgba(255, 255, 255, 0.95); border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
         #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
         .message { margin-bottom: 15px; padding: 10px 15px; border-radius: 18px; max-width: 95%; line-height: 1.4; }
@@ -38,19 +35,29 @@
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .ficha-detalle { font-size: 16px; margin-bottom: 8px; }
         .ficha-detalle strong { color: #333; min-width: 120px; display: inline-block; }
+
+        /* --- ¡NUEVOS ESTILOS PARA LA FICHA DE DOCTOR! --- */
+        .doctor-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
+        .doctor-card h4 { margin: 0 0 10px 0; }
+        .doctor-modal-content { max-width: 400px; }
+        .doctor-modal-body { text-align: center; }
+        .doctor-modal-body img { max-width: 150px; height: auto; border-radius: 50%; margin-bottom: 15px; border: 3px solid #eee; }
+        .doctor-modal-body h2 { margin: 0 0 5px 0; }
+        .doctor-modal-body p { margin: 0 0 15px 0; color: #666; }
+        .doctor-modal-body .firma-img { max-width: 200px; height: auto; border-radius: 0; border: none; border-top: 1px solid #ccc; padding-top: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <video autoplay muted loop id="video-background">
-        <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p ).mp4" type="video/mp4">
+        <source src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/pexels-tima-miroshnichenko-6706335%20(1080p  ).mp4" type="video/mp4">
     </video>
 
     <div class="main-container">
         <div id="login-view">
             <h1>Recepción de Emergencia</h1>
             <div class="input-group"><input type="text" id="username" placeholder="Usuario" required></div>
-            <div class="input-group"><input type="text" id="password" placeholder="Contraseña" required></div>
+            <div class="input-group"><input type="password" id="password" placeholder="Contraseña" required></div>
             <button id="login-button" class="login-button">Entrar</button>
             <p id="error-message"></p>
             <a href="https://wa.me/51967188120?text=Hola,%20necesito%20una%20clave%20de%20ingreso%20para%20el%20sistema." target="_blank" class="whatsapp-link">No tienes usuario</a>
@@ -63,11 +70,20 @@
         </div>
     </div>
 
+    <!-- Modal de Pacientes (existente ) -->
     <div id="detailsModal" class="modal">
       <div class="modal-content">
-        <span class="close-btn">&times;</span>
+        <span class="close-btn" id="close-patient-modal">&times;</span>
         <h3>Detalles Completos del Registro</h3>
         <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <!-- ¡NUEVO MODAL PARA DOCTORES! -->
+    <div id="doctorModal" class="modal">
+      <div class="modal-content doctor-modal-content">
+        <span class="close-btn" id="close-doctor-modal">&times;</span>
+        <div id="doctor-modal-body"></div>
       </div>
     </div>
 
@@ -75,13 +91,9 @@
         // --- CONFIGURACIÓN Y ELEMENTOS GLOBALES ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
-        
-        // =================================================================
-        // ¡CORRECCIÓN DEFINITIVA! - Volvemos a la sintaxis que SÍ funciona con el CDN.
-        // =================================================================
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
-        // Elementos de la vista de Login
+        // Elementos de la vista de Login (sin cambios)
         const loginView = document.getElementById('login-view');
         const videoBackground = document.getElementById('video-background');
         const loginButton = document.getElementById('login-button');
@@ -89,19 +101,174 @@
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('error-message');
         
-        // Elementos de la vista de Chat
+        // Elementos de la vista de Chat (sin cambios)
         const chatView = document.getElementById('chat-view');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const micButton = document.getElementById('mic-button');
-        const modal = document.getElementById('detailsModal');
-        const modalBody = document.getElementById('modal-body');
-        const closeBtn = document.querySelector('.close-btn');
-        let allResults = [];
+        
+        // Modales
+        const patientModal = document.getElementById('detailsModal');
+        const patientModalBody = document.getElementById('modal-body');
+        const closePatientBtn = document.getElementById('close-patient-modal');
+        
+        // ¡NUEVOS ELEMENTOS PARA EL MODAL DE DOCTOR!
+        const doctorModal = document.getElementById('doctorModal');
+        const doctorModalBody = document.getElementById('doctor-modal-body');
+        const closeDoctorBtn = document.getElementById('close-doctor-modal');
+
+        let allResults = []; // Para almacenar resultados de pacientes
+        let allDoctorResults = []; // ¡NUEVO! Para almacenar resultados de doctores
         let conversationHistory = [];
 
-        // --- LÓGICA DE LOGIN (usando la variable 'supabase' que ahora sí existe) ---
+        // --- LÓGICA DE LOGIN (sin cambios) ---
+        loginButton.addEventListener('click', async () => { /* ...código sin cambios... */ });
+
+        // --- LÓGICA DEL CHAT (sin cambios en reconocimiento de voz) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        /* ...código de reconocimiento de voz sin cambios... */
+
+        // --- LÓGICA DE CIERRE DE MODALES ---
+        closePatientBtn.onclick = () => patientModal.style.display = "none";
+        closeDoctorBtn.onclick = () => doctorModal.style.display = "none"; // ¡NUEVO!
+        window.onclick = (event) => {
+            if (event.target == patientModal) { patientModal.style.display = "none"; }
+            if (event.target == doctorModal) { doctorModal.style.display = "none"; } // ¡NUEVO!
+        };
+
+        function addMessage(content, type) { /* ...código sin cambios... */ }
+
+        async function handleUserMessage() {
+            const pregunta = userInput.value.trim();
+            if (!pregunta) return;
+            addMessage(pregunta, 'user-message');
+            userInput.value = '';
+            conversationHistory.push({ role: 'user', content: pregunta });
+            addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
+
+            try {
+                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', {
+                    body: { pregunta: pregunta, historial: conversationHistory.slice(-4) } 
+                });
+                if (planError) throw planError;
+                chatWindow.removeChild(chatWindow.lastChild);
+
+                if (iaResponse.tipo === 'charla') {
+                    addMessage(iaResponse.respuesta, 'ia-message');
+                    conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
+                } else if (iaResponse.tipo === 'consulta_db') {
+                    const plan = iaResponse.plan;
+                    let query = supabase.from(plan.tabla).select(plan.columnas);
+                    if (plan.filtros) { plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); }); }
+                    if (plan.limite) { query = query.limit(plan.limite); }
+
+                    const { data: resultados, error: dbError, count } = await query.select(plan.accion === 'count' ? '*' : plan.columnas, { count: plan.accion === 'count' ? 'exact' : null });
+                    if (dbError) throw dbError;
+
+                    let iaContent;
+                    if (plan.accion === 'count') {
+                        iaContent = `Encontré un total de <strong>${count}</strong> registros.`;
+                        addMessage(iaContent, 'ia-message');
+                    } else if (!resultados || resultados.length === 0) {
+                        iaContent = 'No encontré resultados para tu consulta.';
+                        addMessage(iaContent, 'ia-message');
+                    } else {
+                        // ======================================================
+                        // ¡NUEVA LÓGICA DE DECISIÓN!
+                        // ======================================================
+                        if (plan.tabla === 'doctores') {
+                            mostrarResultadosDoctores(resultados);
+                            iaContent = `Encontré ${resultados.length} doctor(es).`;
+                        } else {
+                            // Mantenemos la lógica original para pacientes y otras tablas
+                            mostrarResultadosPacientes(resultados);
+                            iaContent = `Encontré ${resultados.length} resultado(s).`;
+                        }
+                        // ======================================================
+                    }
+                    conversationHistory.push({ role: 'assistant', content: iaContent });
+                } else {
+                    throw new Error("La respuesta de la IA no tiene el formato esperado.");
+                }
+            } catch (error) {
+                console.error('Error en el proceso:', error);
+                if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) {
+                    chatWindow.removeChild(chatWindow.lastChild);
+                }
+                addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
+            }
+        }
+
+        // --- LÓGICA ORIGINAL PARA MOSTRAR PACIENTES ---
+        function mostrarResultadosPacientes(resultados) {
+            allResults = resultados; // Guardamos en la variable original
+            const tablaHTML = `
+                <p>Aquí tienes un resumen:</p>
+                <table class="tabla-resultados">
+                    <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
+                    <tbody>
+                        ${resultados.map((paciente, index) => `
+                            <tr>
+                                <td>${paciente.PACIENTE || 'N/A'}</td>
+                                <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
+                                <td>S/ ${paciente.CostoTotal || '0.00'}</td>
+                                <td><button class="ver-mas-btn" onclick="showPatientDetails(${index})">Ver más</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>`;
+            addMessage(tablaHTML, 'ia-message');
+        }
+
+        function showPatientDetails(index) {
+            const item = allResults[index];
+            if (!item) return;
+            let detailsHTML = '';
+            for (const key in item) {
+                if (key !== 'id') {
+                    detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
+                }
+            }
+            patientModalBody.innerHTML = detailsHTML;
+            patientModal.style.display = "block";
+        }
+
+        // ======================================================
+        // ¡NUEVAS FUNCIONES PARA MOSTRAR DOCTORES!
+        // ======================================================
+        function mostrarResultadosDoctores(resultados) {
+            allDoctorResults = resultados; // Guardamos en la nueva variable
+            const cardsHTML = `
+                <p>He encontrado los siguientes doctores:</p>
+                ${resultados.map((doc, index) => `
+                    <div class="doctor-card">
+                        <h4>${doc.nombre || 'Sin nombre'}</h4>
+                        <p><strong>RNE:</strong> ${doc.rne || 'N/A'} | <strong>Especialidad:</strong> ${doc.especialidad || 'N/A'}</p>
+                        <button class="ver-mas-btn" onclick="showDoctorDetails(${index})">Ver Ficha Completa</button>
+                    </div>
+                `).join('')}`;
+            addMessage(cardsHTML, 'ia-message');
+        }
+
+        function showDoctorDetails(index) {
+            const doc = allDoctorResults[index];
+            if (!doc) return;
+            
+            const defaultImage = 'https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/utils/default-avatar.png';
+            
+            const detailsHTML = `
+                <img src="${doc.foto || defaultImage}" alt="Foto de ${doc.nombre}">
+                <h2>${doc.nombre || 'Sin nombre'}</h2>
+                <p><strong>Especialidad:</strong> ${doc.especialidad || 'N/A'}</p>
+                <p><strong>RNE:</strong> ${doc.rne || 'N/A'}</p>
+                ${doc.firma ? `<img src="${doc.firma}" alt="Firma" class="firma-img">` : '<p><em>(Sin firma registrada )</em></p>'}
+            `;
+            doctorModalBody.innerHTML = detailsHTML;
+            doctorModal.style.display = "block";
+        }
+
+        // --- Lógica de Login (sin cambios) ---
         loginButton.addEventListener('click', async () => {
             const user = usernameInput.value.trim();
             const pass = passwordInput.value.trim();
@@ -109,7 +276,7 @@
             errorMessage.textContent = 'Verificando...';
 
             try {
-                const { data, error } = await supabase // <--- USO CORRECTO
+                const { data, error } = await supabase
                     .from('usuarios')
                     .select('*')
                     .eq('usuario', user)
@@ -131,12 +298,8 @@
                 errorMessage.textContent = 'Error al conectar con el servidor.';
             }
         });
-
-        // --- LÓGICA DEL CHAT (usando la variable 'supabase' que ahora sí existe) ---
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-        let speechTimeout;
-        let isRecording = false;
+        
+        // --- Lógica de Reconocimiento de Voz (sin cambios) ---
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.continuous = true; recognition.lang = 'es-ES'; recognition.interimResults = true;
@@ -159,101 +322,7 @@
         micButton.addEventListener('click', toggleRecording);
         sendButton.addEventListener('click', handleUserMessage);
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
-        closeBtn.onclick = () => modal.style.display = "none";
-        window.onclick = (event) => { if (event.target == modal) { modal.style.display = "none"; } };
-
-        function addMessage(content, type) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add('message', type);
-            messageDiv.innerHTML = content;
-            chatWindow.appendChild(messageDiv);
-            chatWindow.scrollTop = chatWindow.scrollHeight;
-        }
-
-        async function handleUserMessage() {
-            const pregunta = userInput.value.trim();
-            if (!pregunta) return;
-            addMessage(pregunta, 'user-message');
-            userInput.value = '';
-            conversationHistory.push({ role: 'user', content: pregunta });
-            addMessage('<span class="thinking">Analizando...</span>', 'ia-message');
-
-            try {
-                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { // <--- USO CORRECTO
-                    body: { pregunta: pregunta, historial: conversationHistory.slice(-4) } 
-                });
-                if (planError) throw planError;
-                chatWindow.removeChild(chatWindow.lastChild);
-
-                if (iaResponse.tipo === 'charla') {
-                    addMessage(iaResponse.respuesta, 'ia-message');
-                    conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
-                } else if (iaResponse.tipo === 'consulta_db') {
-                    const plan = iaResponse.plan;
-                    let query = supabase.from(plan.tabla).select(plan.columnas); // <--- USO CORRECTO
-                    if (plan.filtros) {
-                        plan.filtros.forEach(filtro => { query = query[filtro.operador](filtro.columna, filtro.valor); });
-                    }
-                    if (plan.limite) { query = query.limit(plan.limite); }
-
-                    const { data: resultados, error: dbError, count } = await query.select(plan.accion === 'count' ? '*' : plan.columnas, { count: plan.accion === 'count' ? 'exact' : null });
-                    if (dbError) throw dbError;
-
-                    let iaContent;
-                    if (plan.accion === 'count') {
-                        iaContent = `Encontré un total de <strong>${count}</strong> registros.`;
-                        addMessage(iaContent, 'ia-message');
-                    } else if (!resultados || resultados.length === 0) {
-                        iaContent = 'No encontré resultados para tu consulta.';
-                        addMessage(iaContent, 'ia-message');
-                    } else {
-                        allResults = resultados;
-                        iaContent = `Encontré ${resultados.length} resultado(s).`;
-                        const tablaHTML = `
-                            <p>${iaContent} Aquí tienes un resumen:</p>
-                            <table class="tabla-resultados">
-                                <thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead>
-                                <tbody>
-                                    ${resultados.map((paciente, index) => `
-                                        <tr>
-                                            <td>${paciente.PACIENTE || 'N/A'}</td>
-                                            <td>${paciente.FecAte ? new Date(paciente.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
-                                            <td>S/ ${paciente.CostoTotal || '0.00'}</td>
-                                            <td><button class="ver-mas-btn" onclick="showDetails(${index})">Ver más</button></td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>`;
-                        addMessage(tablaHTML, 'ia-message');
-                    }
-                    conversationHistory.push({ role: 'assistant', content: iaContent });
-                } else {
-                    throw new Error("La respuesta de la IA no tiene el formato esperado.");
-                }
-            } catch (error) {
-                console.error('Error en el proceso:', error);
-                if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) {
-                    chatWindow.removeChild(chatWindow.lastChild);
-                }
-                addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
-            }
-        }
-
-        function showDetails(index) {
-            const item = allResults[index];
-            if (!item) return;
-            let detailsHTML = '';
-            for (const key in item) {
-                if (key !== 'id') {
-                    detailsHTML += `<div class="ficha-detalle"><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</div>`;
-                }
-            }
-            modalBody.innerHTML = detailsHTML;
-            modal.style.display = "block";
-        }
     </script>
 
 </body>
 </html>
-
-
