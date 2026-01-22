@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recepción de Emergencia con Chat IA v2.0</title>
+    <title>Recepción de Emergencia con Chat IA v2.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
         /* --- Estilos existentes (sin cambios ) --- */
@@ -35,8 +35,6 @@
         .close-btn { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
         .ficha-detalle { font-size: 16px; margin-bottom: 8px; }
         .ficha-detalle strong { color: #333; min-width: 120px; display: inline-block; }
-
-        /* --- ¡NUEVOS ESTILOS PARA LA FICHA DE DOCTOR! --- */
         .doctor-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-bottom: 10px; }
         .doctor-card h4 { margin: 0 0 10px 0; }
         .doctor-modal-content { max-width: 400px; }
@@ -70,7 +68,6 @@
         </div>
     </div>
 
-    <!-- Modal de Pacientes (existente ) -->
     <div id="detailsModal" class="modal">
       <div class="modal-content">
         <span class="close-btn" id="close-patient-modal">&times;</span>
@@ -79,7 +76,6 @@
       </div>
     </div>
 
-    <!-- ¡NUEVO MODAL PARA DOCTORES! -->
     <div id="doctorModal" class="modal">
       <div class="modal-content doctor-modal-content">
         <span class="close-btn" id="close-doctor-modal">&times;</span>
@@ -93,7 +89,6 @@
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
-        // Elementos de la vista de Login (sin cambios)
         const loginView = document.getElementById('login-view');
         const videoBackground = document.getElementById('video-background');
         const loginButton = document.getElementById('login-button');
@@ -101,43 +96,98 @@
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('error-message');
         
-        // Elementos de la vista de Chat (sin cambios)
         const chatView = document.getElementById('chat-view');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const micButton = document.getElementById('mic-button');
         
-        // Modales
         const patientModal = document.getElementById('detailsModal');
         const patientModalBody = document.getElementById('modal-body');
         const closePatientBtn = document.getElementById('close-patient-modal');
         
-        // ¡NUEVOS ELEMENTOS PARA EL MODAL DE DOCTOR!
         const doctorModal = document.getElementById('doctorModal');
         const doctorModalBody = document.getElementById('doctor-modal-body');
         const closeDoctorBtn = document.getElementById('close-doctor-modal');
 
-        let allResults = []; // Para almacenar resultados de pacientes
-        let allDoctorResults = []; // ¡NUEVO! Para almacenar resultados de doctores
+        let allResults = [];
+        let allDoctorResults = [];
         let conversationHistory = [];
 
-        // --- LÓGICA DE LOGIN (sin cambios) ---
-        loginButton.addEventListener('click', async () => { /* ...código sin cambios... */ });
+        // --- LÓGICA DE LOGIN (RESTAURADA Y FUNCIONAL) ---
+        loginButton.addEventListener('click', async () => {
+            const user = usernameInput.value.trim();
+            const pass = passwordInput.value.trim();
+            if (!user || !pass) { errorMessage.textContent = 'Por favor, ingrese usuario y contraseña.'; return; }
+            errorMessage.textContent = 'Verificando...';
 
-        // --- LÓGICA DEL CHAT (sin cambios en reconocimiento de voz) ---
+            try {
+                const { data, error } = await supabase
+                    .from('usuarios')
+                    .select('*')
+                    .eq('usuario', user)
+                    .eq('clave', pass)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') throw error;
+
+                if (data) {
+                    loginView.style.display = 'none';
+                    videoBackground.style.display = 'none';
+                    chatView.style.display = 'flex';
+                    addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
+                } else {
+                    errorMessage.textContent = 'Usuario o contraseña incorrectos.';
+                }
+            } catch (error) {
+                console.error('Error en el login:', error);
+                errorMessage.textContent = 'Error al conectar con el servidor.';
+            }
+        });
+
+        // --- LÓGICA DEL CHAT (RESTAURADA Y FUNCIONAL) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        /* ...código de reconocimiento de voz sin cambios... */
-
-        // --- LÓGICA DE CIERRE DE MODALES ---
+        let recognition;
+        let speechTimeout;
+        let isRecording = false;
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true; recognition.lang = 'es-ES'; recognition.interimResults = true;
+            recognition.onresult = (event) => {
+                clearTimeout(speechTimeout);
+                let interimTranscript = ''; let finalTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
+                    else { interimTranscript += event.results[i][0].transcript; }
+                }
+                userInput.value = finalTranscript + interimTranscript;
+                speechTimeout = setTimeout(() => { stopRecordingAndSend(); }, 2500);
+            };
+            recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz:', event.error); addMessage(`Error de micrófono: ${event.error}`, 'error-message'); stopRecording(); };
+        } else { micButton.style.display = 'none'; }
+        function toggleRecording() { if (!recognition) return; isRecording ? stopRecording() : startRecording(); }
+        function startRecording() { isRecording = true; micButton.classList.add('recording'); micButton.textContent = '...'; userInput.placeholder = 'Escuchando...'; recognition.start(); }
+        function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
+        function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) { handleUserMessage(); } }, 100); }
+        
+        // LISTENERS RESTAURADOS Y ÚNICOS
+        micButton.addEventListener('click', toggleRecording);
+        sendButton.addEventListener('click', handleUserMessage);
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
         closePatientBtn.onclick = () => patientModal.style.display = "none";
-        closeDoctorBtn.onclick = () => doctorModal.style.display = "none"; // ¡NUEVO!
-        window.onclick = (event) => {
+        closeDoctorBtn.onclick = () => doctorModal.style.display = "none";
+        window.onclick = (event) => { 
             if (event.target == patientModal) { patientModal.style.display = "none"; }
-            if (event.target == doctorModal) { doctorModal.style.display = "none"; } // ¡NUEVO!
+            if (event.target == doctorModal) { doctorModal.style.display = "none"; }
         };
 
-        function addMessage(content, type) { /* ...código sin cambios... */ }
+        function addMessage(content, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', type);
+            messageDiv.innerHTML = content;
+            chatWindow.appendChild(messageDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
 
         async function handleUserMessage() {
             const pregunta = userInput.value.trim();
@@ -174,18 +224,14 @@
                         iaContent = 'No encontré resultados para tu consulta.';
                         addMessage(iaContent, 'ia-message');
                     } else {
-                        // ======================================================
-                        // ¡NUEVA LÓGICA DE DECISIÓN!
-                        // ======================================================
+                        // --- LÓGICA DE DECISIÓN (ÚNICA MODIFICACIÓN) ---
                         if (plan.tabla === 'doctores') {
                             mostrarResultadosDoctores(resultados);
                             iaContent = `Encontré ${resultados.length} doctor(es).`;
                         } else {
-                            // Mantenemos la lógica original para pacientes y otras tablas
                             mostrarResultadosPacientes(resultados);
                             iaContent = `Encontré ${resultados.length} resultado(s).`;
                         }
-                        // ======================================================
                     }
                     conversationHistory.push({ role: 'assistant', content: iaContent });
                 } else {
@@ -200,9 +246,9 @@
             }
         }
 
-        // --- LÓGICA ORIGINAL PARA MOSTRAR PACIENTES ---
+        // --- FUNCIONES PARA MOSTRAR RESULTADOS (SIN CAMBIOS) ---
         function mostrarResultadosPacientes(resultados) {
-            allResults = resultados; // Guardamos en la variable original
+            allResults = resultados;
             const tablaHTML = `
                 <p>Aquí tienes un resumen:</p>
                 <table class="tabla-resultados">
@@ -234,11 +280,8 @@
             patientModal.style.display = "block";
         }
 
-        // ======================================================
-        // ¡NUEVAS FUNCIONES PARA MOSTRAR DOCTORES!
-        // ======================================================
         function mostrarResultadosDoctores(resultados) {
-            allDoctorResults = resultados; // Guardamos en la nueva variable
+            allDoctorResults = resultados;
             const cardsHTML = `
                 <p>He encontrado los siguientes doctores:</p>
                 ${resultados.map((doc, index) => `
@@ -254,74 +297,16 @@
         function showDoctorDetails(index) {
             const doc = allDoctorResults[index];
             if (!doc) return;
-            
             const defaultImage = 'https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/utils/default-avatar.png';
-            
             const detailsHTML = `
                 <img src="${doc.foto || defaultImage}" alt="Foto de ${doc.nombre}">
                 <h2>${doc.nombre || 'Sin nombre'}</h2>
                 <p><strong>Especialidad:</strong> ${doc.especialidad || 'N/A'}</p>
                 <p><strong>RNE:</strong> ${doc.rne || 'N/A'}</p>
-                ${doc.firma ? `<img src="${doc.firma}" alt="Firma" class="firma-img">` : '<p><em>(Sin firma registrada )</em></p>'}
-            `;
+                ${doc.firma ? `<img src="${doc.firma}" alt="Firma" class="firma-img">` : '<p><em>(Sin firma registrada )</em></p>'}`;
             doctorModalBody.innerHTML = detailsHTML;
             doctorModal.style.display = "block";
         }
-
-        // --- Lógica de Login (sin cambios) ---
-        loginButton.addEventListener('click', async () => {
-            const user = usernameInput.value.trim();
-            const pass = passwordInput.value.trim();
-            if (!user || !pass) { errorMessage.textContent = 'Por favor, ingrese usuario y contraseña.'; return; }
-            errorMessage.textContent = 'Verificando...';
-
-            try {
-                const { data, error } = await supabase
-                    .from('usuarios')
-                    .select('*')
-                    .eq('usuario', user)
-                    .eq('clave', pass)
-                    .single();
-
-                if (error && error.code !== 'PGRST116') throw error;
-
-                if (data) {
-                    loginView.style.display = 'none';
-                    videoBackground.style.display = 'none';
-                    chatView.style.display = 'flex';
-                    addMessage("¡Hola! Soy Manu, tu asistente analista. ¿Qué información necesitas hoy?", 'ia-message');
-                } else {
-                    errorMessage.textContent = 'Usuario o contraseña incorrectos.';
-                }
-            } catch (error) {
-                console.error('Error en el login:', error);
-                errorMessage.textContent = 'Error al conectar con el servidor.';
-            }
-        });
-        
-        // --- Lógica de Reconocimiento de Voz (sin cambios) ---
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = true; recognition.lang = 'es-ES'; recognition.interimResults = true;
-            recognition.onresult = (event) => {
-                clearTimeout(speechTimeout);
-                let interimTranscript = ''; let finalTranscript = '';
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) { finalTranscript += event.results[i][0].transcript; } 
-                    else { interimTranscript += event.results[i][0].transcript; }
-                }
-                userInput.value = finalTranscript + interimTranscript;
-                speechTimeout = setTimeout(() => { stopRecordingAndSend(); }, 2500);
-            };
-            recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz:', event.error); addMessage(`Error de micrófono: ${event.error}`, 'error-message'); stopRecording(); };
-        } else { micButton.style.display = 'none'; }
-        function toggleRecording() { if (!recognition) return; isRecording ? stopRecording() : startRecording(); }
-        function startRecording() { isRecording = true; micButton.classList.add('recording'); micButton.textContent = '...'; userInput.placeholder = 'Escuchando...'; recognition.start(); }
-        function stopRecording() { if (!isRecording) return; isRecording = false; micButton.classList.remove('recording'); micButton.textContent = '🎤'; userInput.placeholder = 'Escribe o presiona el micrófono...'; recognition.stop(); clearTimeout(speechTimeout); }
-        function stopRecordingAndSend() { if (!isRecording) return; stopRecording(); setTimeout(() => { if (userInput.value.trim()) { handleUserMessage(); } }, 100); }
-        micButton.addEventListener('click', toggleRecording);
-        sendButton.addEventListener('click', handleUserMessage);
-        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
     </script>
 
 </body>
