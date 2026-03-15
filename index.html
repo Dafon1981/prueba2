@@ -8,186 +8,74 @@
     <style>
         /* --- ESTILOS GENERALES Y DE FONDO --- */
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding: 0; width: 100%; height: 100vh;
+            overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #eef2f5;
         }
         .main-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
+            display: flex; justify-content: center; align-items: center;
+            width: 100%; height: 100%;
             background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center;
             background-size: cover;
         }
-
-        /* --- CONTENEDOR PRINCIPAL DEL CHAT --- */
         .app-container {
-            width: 95%;
-            max-width: 1200px;
-            height: 90vh;
-            background: rgba(255, 255, 255, 0.98);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            display: flex;
-            overflow: hidden;
+            width: 95%; max-width: 1200px; height: 90vh;
+            background: rgba(255, 255, 255, 0.98); border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); display: flex; overflow: hidden;
         }
-
-        /* --- PANEL DEL PRESENTADOR (IZQUIERDA) --- */
         .presenter-panel {
-            width: 35%;
-            min-width: 300px;
-            background-color: #1c2532;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
+            width: 35%; min-width: 300px; background-color: #1c2532;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            padding: 20px; box-sizing: border-box;
         }
         .presenter-video-container {
-            width: 100%;
-            padding-top: 100%; /* Proporción 1:1 */
-            position: relative;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 5px solid #2a3b4e;
+            width: 100%; padding-top: 100%; position: relative;
+            border-radius: 50%; overflow: hidden; border: 5px solid #2a3b4e;
             box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
         }
         #presenter-video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
         }
-        .presenter-panel h1 {
-            color: #ffffff;
-            margin-top: 20px;
-            font-size: 1.8em;
-            text-align: center;
-        }
-        .presenter-panel p {
-            color: #a9c1d9;
-            text-align: center;
-            font-size: 1em;
-        }
-
-        /* --- PANEL DEL CHAT (DERECHA) --- */
-        .chat-panel {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        #chat-window {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 20px;
-        }
+        .presenter-panel h1 { color: #ffffff; margin-top: 20px; font-size: 1.8em; text-align: center; }
+        .presenter-panel p { color: #a9c1d9; text-align: center; font-size: 1em; }
+        .chat-panel { flex-grow: 1; display: flex; flex-direction: column; }
+        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
         .message {
-            margin-bottom: 15px;
-            padding: 12px 18px;
-            border-radius: 20px;
-            max-width: 90%;
-            line-height: 1.5;
-            display: table;
+            margin-bottom: 15px; padding: 12px 18px; border-radius: 20px;
+            max-width: 90%; line-height: 1.5; display: table;
         }
-        .user-message {
-            background-color: #007bff;
-            color: white;
-            margin-left: auto;
-            border-bottom-right-radius: 5px;
-        }
-        .ia-message {
-            background-color: #e9e9eb;
-            color: #333;
-            margin-right: auto;
-            border-bottom-left-radius: 5px;
-        }
-        .error-message {
-            background-color: #ffebee;
-            color: #c62828;
-            border: 1px solid #c62828;
-        }
-        .thinking-indicator {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
+        .user-message { background-color: #007bff; color: white; margin-left: auto; border-bottom-right-radius: 5px; }
+        .ia-message { background-color: #e9e9eb; color: #333; margin-right: auto; border-bottom-left-radius: 5px; }
+        .error-message { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
+        .thinking-indicator { display: flex; align-items: center; gap: 5px; }
         .thinking-indicator .dot {
-            width: 8px;
-            height: 8px;
-            background-color: #999;
-            border-radius: 50%;
+            width: 8px; height: 8px; background-color: #999; border-radius: 50%;
             animation: bounce 1.4s infinite ease-in-out both;
         }
         .thinking-indicator .dot:nth-child(1) { animation-delay: -0.32s; }
         .thinking-indicator .dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }
-
-        /* --- ÁREA DE ENTRADA --- */
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
         #input-area {
-            display: flex;
-            padding: 15px;
-            border-top: 1px solid #ddd;
-            align-items: center;
-            background-color: #f8f9fa;
+            display: flex; padding: 15px; border-top: 1px solid #ddd;
+            align-items: center; background-color: #f8f9fa;
         }
         #user-input {
-            flex-grow: 1;
-            padding: 12px 18px;
-            border: 1px solid #ccc;
-            border-radius: 22px;
-            font-size: 16px;
-            resize: none;
-            outline: none;
+            flex-grow: 1; padding: 12px 18px; border: 1px solid #ccc;
+            border-radius: 22px; font-size: 16px; resize: none; outline: none;
             transition: border-color 0.2s;
         }
-        #user-input:focus {
-            border-color: #007bff;
-        }
+        #user-input:focus { border-color: #007bff; }
         
-        /* --- NUEVO ESTILO PARA EL BOTÓN ÚNICO --- */
+        /* --- ESTILO CORREGIDO PARA EL BOTÓN ÚNICO --- */
         #action-button {
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            margin-left: 10px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            background: #007bff; color: white; border: none; border-radius: 50%;
+            width: 44px; height: 44px; margin-left: 10px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
             transition: background-color 0.2s, transform 0.2s;
-            position: relative; /* Para la animación de los íconos */
-            overflow: hidden;
         }
-        #action-button:hover {
-            background-color: #0056b3;
-        }
-        #action-button.recording {
-            background-color: #dc3545;
-            transform: scale(1.1);
-        }
-        #action-button svg {
-            position: absolute;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-            width: 20px;
-            height: 20px;
-        }
-        .icon-mic { transform: scale(1); opacity: 1; }
-        .icon-send { transform: scale(0); opacity: 0; }
+        #action-button:hover { background-color: #0056b3; }
+        #action-button.recording { background-color: #dc3545; transform: scale(1.1); }
+        #action-button svg { width: 20px; height: 20px; }
         
         /* --- ESTILOS DE TABLAS Y MODALES --- */
         .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
@@ -202,7 +90,6 @@
 <body>
     <div class="main-container">
         <div class="app-container">
-            <!-- Panel del Presentador -->
             <div class="presenter-panel">
                 <div class="presenter-video-container">
                     <img id="presenter-video" src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/presentador.gif" alt="Asistente Virtual">
@@ -210,27 +97,22 @@
                 <h1>Manu, tu Asistente IA</h1>
                 <p>Estoy aquí para ayudarte a analizar los datos de emergencia de forma rápida y eficiente.</p>
             </div>
-
-            <!-- Panel del Chat -->
             <div class="chat-panel">
                 <div id="chat-window"></div>
                 <div id="input-area">
                     <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
-                    <!-- BOTÓN ÚNICO Y DINÁMICO -->
                     <button id="action-button" title="Grabar voz">
-                        <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-mic-fill icon-mic" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>
-                        <svg id="send-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-up-short icon-send" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+                        <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>
+                        <svg id="send-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16" style="display: none;"><path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
                     </button>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Modales (sin cambios ) -->
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-patient-modal">&times;</span><h3>Detalles Completos del Registro</h3><div id="modal-body"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-doctor-modal">&times;</span><div id="doctor-modal-body"></div></div></div>
     <script>
-        // --- CÓDIGO JAVASCRIPT RENOVADO (v3.1) ---
+        // --- CÓDIGO JAVASCRIPT CORREGIDO (v3.2) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
@@ -368,7 +250,7 @@
                 stopRecording();
             };
         } else {
-            actionButton.style.display = 'none'; // Oculta el botón si no hay soporte
+            actionButton.style.display = 'none';
         }
 
         let isRecording = false;
@@ -385,22 +267,20 @@
             recognition.stop();
         }
 
-        // --- NUEVA LÓGICA PARA EL BOTÓN DINÁMICO ---
+        // --- LÓGICA CORREGIDA PARA EL BOTÓN DINÁMICO ---
         function updateButtonState() {
             if (userInput.value.trim() !== '') {
-                // Muestra Enviar, oculta Micrófono
-                micIcon.style.transform = 'scale(0)'; micIcon.style.opacity = '0';
-                sendIcon.style.transform = 'scale(1)'; sendIcon.style.opacity = '1';
+                micIcon.style.display = 'none';
+                sendIcon.style.display = 'block';
                 actionButton.setAttribute('title', 'Enviar mensaje');
             } else {
-                // Muestra Micrófono, oculta Enviar
-                micIcon.style.transform = 'scale(1)'; micIcon.style.opacity = '1';
-                sendIcon.style.transform = 'scale(0)'; sendIcon.style.opacity = '0';
+                micIcon.style.display = 'block';
+                sendIcon.style.display = 'none';
                 actionButton.setAttribute('title', 'Grabar voz');
             }
         }
 
-        // --- Event Listeners ---
+        // --- Event Listeners CORREGIDOS ---
         actionButton.addEventListener('click', () => {
             if (userInput.value.trim() !== '') {
                 handleUserMessage();
@@ -427,7 +307,7 @@
 
         // --- INICIALIZACIÓN ---
         addMessage("¡Hola! Soy Manu, tu asistente de análisis. ¿Qué información necesitas hoy?", 'ia-message');
-        updateButtonState(); // Llama al inicio para asegurar el estado correcto del botón
+        updateButtonState();
 
     </script>
 </body>
