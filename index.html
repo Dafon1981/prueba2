@@ -6,6 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* --- ESTILOS GENERALES Y DE FONDO --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #eef2f5; }
         .main-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center; background-size: cover; }
         .app-container { width: 95%; max-width: 1200px; height: 90vh; background: rgba(255, 255, 255, 0.98); border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15); display: flex; overflow: hidden; }
@@ -28,10 +29,17 @@
         #input-area { display: flex; padding: 15px; border-top: 1px solid #ddd; align-items: center; background-color: #f8f9fa; }
         #user-input { flex-grow: 1; padding: 12px 18px; border: 1px solid #ccc; border-radius: 22px; font-size: 16px; resize: none; outline: none; transition: border-color 0.2s; }
         #user-input:focus { border-color: #007bff; }
-        #action-button { background: #007bff; color: white; border: none; border-radius: 50%; width: 44px; height: 44px; margin-left: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s, transform 0.2s; }
-        #action-button:hover { background-color: #0056b3; }
-        #action-button.recording { background-color: #dc3545; transform: scale(1.1); }
-        #action-button svg { width: 20px; height: 20px; }
+        
+        /* --- ESTILO SIMPLIFICADO PARA EL BOTÓN DE ENVIAR --- */
+        #send-button {
+            background: #007bff; color: white; border: none; border-radius: 50%;
+            width: 44px; height: 44px; margin-left: 10px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: background-color 0.2s;
+        }
+        #send-button:hover { background-color: #0056b3; }
+        #send-button svg { width: 20px; height: 20px; }
+
         .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         .ver-mas-btn { background: none; border: none; color: #007bff; cursor: pointer; text-decoration: underline; }
@@ -54,10 +62,12 @@
             <div class="chat-panel">
                 <div id="chat-window"></div>
                 <div id="input-area">
-                    <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
-                    <button id="action-button" title="Grabar voz">
-                        <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>
-                        <svg id="send-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16" style="display: none;"><path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+                    <input type="text" id="user-input" placeholder="Escribe tu consulta...">
+                    <!-- BOTÓN DE ENVIAR ÚNICO Y PERMANENTE -->
+                    <button id="send-button" title="Enviar mensaje">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/>
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -66,16 +76,14 @@
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-patient-modal">&times;</span><h3>Detalles Completos del Registro</h3><div id="modal-body"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-doctor-modal">&times;</span><div id="doctor-modal-body"></div></div></div>
     <script>
-        // --- CÓDIGO JAVASCRIPT CORREGIDO (v3.4) ---
+        // --- CÓDIGO JAVASCRIPT SIMPLIFICADO Y CORREGIDO (v3.5) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
-        const actionButton = document.getElementById('action-button');
-        const micIcon = document.getElementById('mic-icon');
-        const sendIcon = document.getElementById('send-icon');
+        const sendButton = document.getElementById('send-button');
         const patientModal = document.getElementById('detailsModal');
         const doctorModal = document.getElementById('doctorModal');
         
@@ -96,7 +104,6 @@
 
             addMessage(pregunta, 'user-message');
             userInput.value = '';
-            updateButtonState();
             conversationHistory.push({ role: 'user', content: pregunta });
             
             const thinkingMessage = addMessage('<div class="thinking-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>', 'ia-message');
@@ -182,65 +189,17 @@
             patientModal.classList.add('active');
         };
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = false; recognition.lang = 'es-ES'; recognition.interimResults = false;
-            recognition.onresult = (event) => {
-                userInput.value = event.results[0][0].transcript;
-                stopRecording();
-                updateButtonState();
-                setTimeout(handleUserMessage, 200);
-            };
-            recognition.onerror = (event) => {
-                console.error('Error de reconocimiento de voz:', event.error);
-                addMessage(`Error de micrófono: ${event.error}`, 'error-message');
-                stopRecording();
-            };
-        } else {
-            actionButton.style.display = 'none';
-        }
+        // --- Event Listeners SIMPLIFICADOS Y CORREGIDOS ---
+        sendButton.addEventListener('click', handleUserMessage);
 
-        let isRecording = false;
-        function startRecording() {
-            if (isRecording || !recognition) return;
-            isRecording = true;
-            actionButton.classList.add('recording');
-            recognition.start();
-        }
-        function stopRecording() {
-            if (!isRecording || !recognition) return;
-            isRecording = false;
-            actionButton.classList.remove('recording');
-            recognition.stop();
-        }
-
-        // --- LÓGICA CORREGIDA Y REFORZADA PARA EL BOTÓN DINÁMICO ---
-        function updateButtonState() {
-            const hasText = userInput.value.trim() !== '';
-            micIcon.style.display = hasText ? 'none' : 'block';
-            sendIcon.style.display = hasText ? 'block' : 'none';
-            actionButton.setAttribute('title', hasText ? 'Enviar mensaje' : 'Grabar voz');
-        }
-
-        actionButton.addEventListener('click', () => {
-            if (userInput.value.trim() !== '') {
-                handleUserMessage();
-            } else {
-                isRecording ? stopRecording() : startRecording();
-            }
-        });
-
-        userInput.addEventListener('input', updateButtonState);
-        userInput.addEventListener('keyup', (e) => { // Usamos 'keyup' para asegurar que el valor se actualiza
-            updateButtonState();
+        userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
+                e.preventDefault(); // Previene el salto de línea
                 handleUserMessage();
             }
         });
         
+        // Cierre de modales
         document.getElementById('close-patient-modal').onclick = () => patientModal.classList.remove('active');
         document.getElementById('close-doctor-modal').onclick = () => doctorModal.classList.remove('active');
         window.onclick = (event) => {
@@ -248,8 +207,8 @@
             if (event.target == doctorModal) doctorModal.classList.remove('active');
         };
 
+        // --- INICIALIZACIÓN ---
         addMessage("¡Hola! Soy Manu, tu asistente de análisis. ¿Qué información necesitas hoy?", 'ia-message');
-        updateButtonState();
 
     </script>
 </body>
