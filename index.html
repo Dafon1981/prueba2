@@ -63,20 +63,21 @@
             </div>
         </div>
     </div>
-    <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-patient-modal">&times;</span><h3>Detalles Completos del Registro</h3><div id="modal-body"></div></div></div>
-    <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-doctor-modal">&times;</span><div id="doctor-modal-body"></div></div></div>
+    <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-patient-modal">×</span><h3>Detalles Completos del Registro</h3><div id="modal-body"></div></div></div>
+    <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-doctor-modal">×</span><div id="doctor-modal-body"></div></div></div>
+
     <script>
-        // --- CÓDIGO JAVASCRIPT CORREGIDO Y REFORZADO (v3.7) ---
+        // --- CÓDIGO JAVASCRIPT CORREGIDO (v3.8) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const patientModal = document.getElementById('detailsModal');
         const doctorModal = document.getElementById('doctorModal');
-        
+
         let conversationHistory = [];
 
         function addMessage(content, type) {
@@ -88,93 +89,86 @@
             return messageDiv;
         }
 
-   async function handleUserMessage() {
-    // Tomamos el valor y limpiamos inmediatamente (práctica recomendada)
-    const pregunta = userInput.value.trim();
-    userInput.value = '';
+        async function handleUserMessage() {
+            // Tomamos el valor y limpiamos inmediatamente
+            const pregunta = userInput.value.trim();
+            userInput.value = '';
 
-    if (!pregunta) return;
+            if (!pregunta) return;
 
-    // Mostramos el mensaje del usuario
-    addMessage(pregunta, 'user-message');
-    conversationHistory.push({ role: 'user', content: pregunta });
+            addMessage(pregunta, 'user-message');
+            conversationHistory.push({ role: 'user', content: pregunta });
 
-    // Indicador de "pensando..."
-    const thinkingMessage = addMessage(
-        '<div class="thinking-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>',
-        'ia-message'
-    );
+            const thinkingMessage = addMessage(
+                '<div class="thinking-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>',
+                'ia-message'
+            );
 
-    try {
-        const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', {
-            body: { pregunta, historial: conversationHistory.slice(-6) }
-        });
-
-        if (functionError) throw functionError;
-
-        // Quitamos el "pensando..."
-        if (thinkingMessage && thinkingMessage.parentNode) {
-            chatWindow.removeChild(thinkingMessage);
-        }
-
-        if (iaResponse.tipo === 'charla') {
-            addMessage(iaResponse.respuesta, 'ia-message');
-            conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
-        } 
-        else if (iaResponse.tipo === 'consulta_db' && iaResponse.plan) {
-            const plan = iaResponse.plan;
-            let query = supabase.from(plan.tabla).select(plan.columnas || '*');
-
-            if (plan.filtros) {
-                plan.filtros.forEach(filtro => {
-                    if (typeof query[filtro.operador] === 'function') {
-                        query = query[filtro.operador](filtro.columna, filtro.valor);
-                    }
+            try {
+                const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', {
+                    body: { pregunta, historial: conversationHistory.slice(-6) }
                 });
-            }
 
-            if (plan.limite) {
-                query = query.limit(plan.limite);
-            }
+                if (functionError) throw functionError;
 
-            const { data: resultados, error: dbError } = await query;
-
-            if (dbError) throw dbError;
-
-            let iaContent;
-            if (!resultados || resultados.length === 0) {
-                iaContent = 'No encontré resultados para tu consulta.';
-                addMessage(iaContent, 'ia-message');
-            } else {
-                iaContent = `Encontré ${resultados.length} resultado(s).`;
-                
-                if (plan.tabla === 'doctores') {
-                    addMessage(`Resultados de Doctores: <pre>${JSON.stringify(resultados, null, 2)}</pre>`, 'ia-message');
-                } else {
-                    mostrarResultadosPacientes(resultados);
+                if (thinkingMessage && thinkingMessage.parentNode) {
+                    chatWindow.removeChild(thinkingMessage);
                 }
+
+                if (iaResponse.tipo === 'charla') {
+                    addMessage(iaResponse.respuesta, 'ia-message');
+                    conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
+                } 
+                else if (iaResponse.tipo === 'consulta_db' && iaResponse.plan) {
+                    const plan = iaResponse.plan;
+                    let query = supabase.from(plan.tabla).select(plan.columnas || '*');
+
+                    if (plan.filtros) {
+                        plan.filtros.forEach(filtro => {
+                            if (typeof query[filtro.operador] === 'function') {
+                                query = query[filtro.operador](filtro.columna, filtro.valor);
+                            }
+                        });
+                    }
+
+                    if (plan.limite) {
+                        query = query.limit(plan.limite);
+                    }
+
+                    const { data: resultados, error: dbError } = await query;
+
+                    if (dbError) throw dbError;
+
+                    let iaContent;
+                    if (!resultados || resultados.length === 0) {
+                        iaContent = 'No encontré resultados para tu consulta.';
+                        addMessage(iaContent, 'ia-message');
+                    } else {
+                        iaContent = `Encontré ${resultados.length} resultado(s).`;
+                        
+                        if (plan.tabla === 'doctores') {
+                            addMessage(`Resultados de Doctores: <pre>${JSON.stringify(resultados, null, 2)}</pre>`, 'ia-message');
+                        } else {
+                            mostrarResultadosPacientes(resultados);
+                        }
+                    }
+
+                    conversationHistory.push({ role: 'assistant', content: iaContent });
+                } 
+                else {
+                    throw new Error("La respuesta de la IA no tiene el formato esperado.");
+                }
+            } catch (error) {
+                console.error('Error en el proceso:', error);
+                
+                if (thinkingMessage && thinkingMessage.parentNode) {
+                    chatWindow.removeChild(thinkingMessage);
+                }
+                
+                addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
             }
-
-            conversationHistory.push({ role: 'assistant', content: iaContent });
-        } 
-        else {
-            throw new Error("La respuesta de la IA no tiene el formato esperado.");
         }
-    } catch (error) {
-        console.error('Error en el proceso:', error);
-        
-        // Limpiamos el thinking si aún está
-        if (thinkingMessage && thinkingMessage.parentNode) {
-            chatWindow.removeChild(thinkingMessage);
-        }
-        
-        addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
-    }
-}
 
-
-
-        
         function mostrarResultadosPacientes(resultados) {
             window.allResults = resultados;
             const tablaHTML = `
@@ -199,37 +193,34 @@
         window.showPatientDetails = (index) => {
             const item = window.allResults[index];
             if (!item) return;
-            let detailsHTML = Object.entries(item).map(([key, value]) => 
+            let detailsHTML = Object.entries(item).map(([key, value]) =>
                 `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${value || 'N/A'}</p>`
             ).join('');
             document.getElementById('modal-body').innerHTML = detailsHTML;
             patientModal.classList.add('active');
         };
 
-        // --- LÓGICA DE EVENTOS REESCRITA Y A PRUEBA DE FALLOS ---
-        
-        // 1. Asignar el evento de clic directamente al botón.
+        // Eventos
         sendButton.addEventListener('click', handleUserMessage);
 
-        // 2. Asignar el evento de 'Enter' al input.
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 handleUserMessage();
             }
         });
-        
+
         // Cierre de modales
         document.getElementById('close-patient-modal').onclick = () => patientModal.classList.remove('active');
         document.getElementById('close-doctor-modal').onclick = () => doctorModal.classList.remove('active');
+
         window.onclick = (event) => {
             if (event.target == patientModal) patientModal.classList.remove('active');
             if (event.target == doctorModal) doctorModal.classList.remove('active');
         };
 
-        // --- INICIALIZACIÓN ---
+        // Mensaje inicial
         addMessage("¡Hola! Soy Manu, tu asistente de análisis. ¿Qué información necesitas hoy?", 'ia-message');
-
     </script>
 </body>
 </html>
