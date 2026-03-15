@@ -88,67 +88,92 @@
             return messageDiv;
         }
 
-        async function handleUserMessage() {
-            const pregunta = userInput.value.trim();
-            if (!pregunta) return;
+   async function handleUserMessage() {
+    // Tomamos el valor y limpiamos inmediatamente (práctica recomendada)
+    const pregunta = userInput.value.trim();
+    userInput.value = '';
 
-            addMessage(pregunta, 'user-message');
-            conversationHistory.push({ role: 'user', content: pregunta });
-            
-            // **LA CORRECCIÓN CLAVE:** Limpiar el input DESPUÉS de haber procesado la pregunta
-            userInput.value = ''; 
+    if (!pregunta) return;
 
-            const thinkingMessage = addMessage('<div class="thinking-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>', 'ia-message');
+    // Mostramos el mensaje del usuario
+    addMessage(pregunta, 'user-message');
+    conversationHistory.push({ role: 'user', content: pregunta });
 
-            try {
-                const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', {
-                    body: { pregunta, historial: conversationHistory.slice(-6) }
-                });
+    // Indicador de "pensando..."
+    const thinkingMessage = addMessage(
+        '<div class="thinking-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>',
+        'ia-message'
+    );
 
-                if (functionError) throw functionError;
-                
-                chatWindow.removeChild(thinkingMessage);
+    try {
+        const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', {
+            body: { pregunta, historial: conversationHistory.slice(-6) }
+        });
 
-                if (iaResponse.tipo === 'charla') {
-                    addMessage(iaResponse.respuesta, 'ia-message');
-                    conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
-                } else if (iaResponse.tipo === 'consulta_db' && iaResponse.plan) {
-                    const plan = iaResponse.plan;
-                    let query = supabase.from(plan.tabla).select(plan.columnas || '*');
-                    if (plan.filtros) {
-                        plan.filtros.forEach(filtro => {
-                            if (typeof query[filtro.operador] === 'function') {
-                                query = query[filtro.operador](filtro.columna, filtro.valor);
-                            }
-                        });
-                    }
-                    if (plan.limite) { query = query.limit(plan.limite); }
+        if (functionError) throw functionError;
 
-                    const { data: resultados, error: dbError } = await query;
-                    if (dbError) throw dbError;
-
-                    let iaContent;
-                    if (!resultados || resultados.length === 0) {
-                        iaContent = 'No encontré resultados para tu consulta.';
-                        addMessage(iaContent, 'ia-message');
-                    } else {
-                        iaContent = `Encontré ${resultados.length} resultado(s).`;
-                        if (plan.tabla === 'doctores') {
-                            addMessage(`Resultados de Doctores: <pre>${JSON.stringify(resultados, null, 2)}</pre>`, 'ia-message');
-                        } else {
-                            mostrarResultadosPacientes(resultados);
-                        }
-                    }
-                    conversationHistory.push({ role: 'assistant', content: iaContent });
-                } else {
-                    throw new Error("La respuesta de la IA no tiene el formato esperado.");
-                }
-            } catch (error) {
-                console.error('Error en el proceso:', error);
-                if (thinkingMessage.parentNode) chatWindow.removeChild(thinkingMessage);
-                addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
-            }
+        // Quitamos el "pensando..."
+        if (thinkingMessage && thinkingMessage.parentNode) {
+            chatWindow.removeChild(thinkingMessage);
         }
+
+        if (iaResponse.tipo === 'charla') {
+            addMessage(iaResponse.respuesta, 'ia-message');
+            conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
+        } 
+        else if (iaResponse.tipo === 'consulta_db' && iaResponse.plan) {
+            const plan = iaResponse.plan;
+            let query = supabase.from(plan.tabla).select(plan.columnas || '*');
+
+            if (plan.filtros) {
+                plan.filtros.forEach(filtro => {
+                    if (typeof query[filtro.operador] === 'function') {
+                        query = query[filtro.operador](filtro.columna, filtro.valor);
+                    }
+                });
+            }
+
+            if (plan.limite) {
+                query = query.limit(plan.limite);
+            }
+
+            const { data: resultados, error: dbError } = await query;
+
+            if (dbError) throw dbError;
+
+            let iaContent;
+            if (!resultados || resultados.length === 0) {
+                iaContent = 'No encontré resultados para tu consulta.';
+                addMessage(iaContent, 'ia-message');
+            } else {
+                iaContent = `Encontré ${resultados.length} resultado(s).`;
+                
+                if (plan.tabla === 'doctores') {
+                    addMessage(`Resultados de Doctores: <pre>${JSON.stringify(resultados, null, 2)}</pre>`, 'ia-message');
+                } else {
+                    mostrarResultadosPacientes(resultados);
+                }
+            }
+
+            conversationHistory.push({ role: 'assistant', content: iaContent });
+        } 
+        else {
+            throw new Error("La respuesta de la IA no tiene el formato esperado.");
+        }
+    } catch (error) {
+        console.error('Error en el proceso:', error);
+        
+        // Limpiamos el thinking si aún está
+        if (thinkingMessage && thinkingMessage.parentNode) {
+            chatWindow.removeChild(thinkingMessage);
+        }
+        
+        addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
+    }
+}
+
+
+
         
         function mostrarResultadosPacientes(resultados) {
             window.allResults = resultados;
