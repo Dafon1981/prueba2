@@ -6,7 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v4.4 - AVATAR DINÁMICO Y RECTANGULAR --- */
+        /* --- ESTILOS v4.4 (SIN CAMBIOS ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -14,12 +14,10 @@
             --surface-color: #ffffff;
             --text-primary: #212529;
         }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color ); }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--background-color); }
         .app-container { display: flex; height: 100vh; width: 100%; background-color: var(--surface-color); }
-
-        /* --- PANEL IZQUIERDO (AVATAR) --- */
         .presenter-panel {
-            width: 320px; /* Ancho fijo */
+            width: 320px;
             background-color: #1c2532;
             display: flex;
             flex-direction: column;
@@ -30,10 +28,10 @@
             flex-shrink: 0;
         }
         .avatar-container {
-            width: 100%; /* Ocupa todo el ancho del panel */
-            padding-top: 125%; /* Proporción para hacerlo rectangular (alto/ancho) */
+            width: 100%;
+            padding-top: 125%;
             position: relative;
-            border-radius: 15px; /* Bordes redondeados */
+            border-radius: 15px;
             overflow: hidden;
             border: 4px solid #2a3b4e;
             box-shadow: 0 0 25px rgba(0, 123, 255, 0.2);
@@ -43,12 +41,10 @@
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            object-fit: cover; /* Asegura que el GIF llene el espacio */
+            object-fit: cover;
         }
         .presenter-panel h1 { color: #ffffff; font-size: 1.6em; text-align: center; margin: 0 0 10px 0; }
         .presenter-panel p { color: #a9c1d9; text-align: center; font-size: 0.95em; margin: 0; }
-
-        /* --- PANEL DERECHO (CHAT) --- */
         .chat-panel { flex-grow: 1; display: flex; flex-direction: column; position: relative; }
         .header-logo { position: absolute; top: 15px; right: 20px; width: 50px; height: auto; opacity: 0.8; }
         #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; padding-top: 70px; }
@@ -59,17 +55,13 @@
         .ia-message { margin-right: auto; }
         .ia-message .message-content { background-color: #e9e9eb; color: var(--text-primary); border-bottom-left-radius: 5px; }
         .error-message .message-content { background-color: #ffebee; color: #c62828; border: 1px solid #c62828; }
-        
-        /* --- ÁREA DE ENTRADA (SIN CAMBIOS) --- */
         #input-area { display: flex; padding: 10px 15px; border-top: 1px solid #ddd; align-items: center; background-color: #f8f9fa; flex-shrink: 0; }
         #user-input { flex-grow: 1; padding: 12px 18px; border: 1px solid #ccc; border-radius: 22px; font-size: 16px; resize: none; outline: none; }
         .action-button { background: var(--secondary-color); color: white; border: none; border-radius: 50%; width: 44px; height: 44px; margin-left: 10px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
-        
-        /* --- RESPONSIVE Y MODALES (SIN CAMBIOS) --- */
         @media (max-width: 768px) {
             .presenter-panel { display: none; }
             .chat-panel { width: 100%; }
-            .header-logo { display: none; } /* Ocultamos el logo de escritorio en móvil */
+            .header-logo { display: none; }
             .chat-header-mobile { display: flex; align-items: center; padding: 10px 15px; background-color: var(--primary-color); color: white; flex-shrink: 0; }
             .header-info-mobile h1 { margin: 0; font-size: 1.1em; }
             .header-logo-mobile { margin-left: auto; width: 35px; height: 35px; }
@@ -106,18 +98,16 @@
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-patient-modal">&times;</span><h3>Detalles Completos del Registro</h3><div id="modal-body"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-doctor-modal">&times;</span><div id="doctor-modal-body"></div></div></div>
     <script>
-        // --- CÓDIGO JAVASCRIPT v4.4 (CON AVATAR DINÁMICO) ---
+        // --- CÓDIGO JAVASCRIPT v4.5 (GIFs de un solo ciclo) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
-        // --- Selectores del DOM ---
         const presenterAvatar = document.getElementById('presenter-avatar');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
         const sendButton = document.getElementById('send-button');
         const micButton = document.getElementById('mic-button');
-        // ... (resto de selectores sin cambios)
         const patientModal = document.getElementById('detailsModal');
         const patientModalBody = document.getElementById('modal-body');
         const closePatientBtn = document.getElementById('close-patient-modal');
@@ -127,7 +117,6 @@
 
         let conversationHistory = [];
 
-        // --- NUEVA LÓGICA PARA EL AVATAR DINÁMICO ---
         const gifs = {
             saludo: ['01_saludo.gif'],
             si: ['si_02.gif', 'si_03.gif', 'si_04.gif'],
@@ -135,22 +124,23 @@
             conversacion: ['con_01.gif', 'con_02.gif', 'con_03.gif']
         };
 
+        // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+        // Esta función ahora fuerza la recarga del GIF cada vez que se llama.
         function setAvatar(tipo) {
             const gifList = gifs[tipo] || gifs.conversacion;
             const randomGif = gifList[Math.floor(Math.random() * gifList.length)];
-            // Construimos la URL correcta para ver el archivo raw en GitHub
-            presenterAvatar.src = `https://raw.githubusercontent.com/Dafon1981/prueba2/main/${randomGif}`;
+            const baseUrl = `https://raw.githubusercontent.com/Dafon1981/prueba2/main/${randomGif}`;
+            // Añadimos un parámetro único para evitar que el navegador use la caché
+            presenterAvatar.src = `${baseUrl}?t=${new Date( ).getTime()}`;
         }
 
-        // --- INICIALIZACIÓN ---
-        document.addEventListener('DOMContentLoaded', ( ) => {
-            setAvatar('saludo'); // Avatar inicial
+        document.addEventListener('DOMContentLoaded', () => {
+            setAvatar('saludo');
             addMessage("¡Hola! Soy Manu, tu asistente. ¿En qué puedo ayudarte hoy?", 'ia-message');
             userInput.focus();
             // ... (lógica de cabecera móvil sin cambios)
         });
 
-        // --- LÓGICA DE CHAT (CON LA INTEGRACIÓN DEL AVATAR) ---
         async function handleUserMessage() {
             const pregunta = userInput.value.trim();
             if (!pregunta) return;
@@ -167,7 +157,7 @@
                 chatWindow.removeChild(chatWindow.lastChild);
 
                 if (iaResponse.tipo === 'charla') {
-                    setAvatar('conversacion'); // GIF de conversación
+                    setAvatar('conversacion');
                     addMessage(iaResponse.respuesta, 'ia-message');
                 } else if (iaResponse.tipo === 'consulta_db') {
                     const plan = iaResponse.plan;
@@ -179,10 +169,10 @@
                     if (dbError) throw dbError;
 
                     if (!resultados || resultados.length === 0) {
-                        setAvatar('no'); // GIF de negación
+                        setAvatar('no');
                         addMessage('No encontré resultados para tu consulta.', 'ia-message');
                     } else {
-                        setAvatar('si'); // GIF de afirmación
+                        setAvatar('si');
                         addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message');
                         if (plan.tabla === 'doctores') {
                             mostrarResultadosDoctores(resultados);
@@ -192,7 +182,7 @@
                     }
                 } else { throw new Error("Respuesta inesperada de la IA."); }
             } catch (error) {
-                setAvatar('no'); // GIF de negación/error
+                setAvatar('no');
                 console.error('Error en el proceso:', error);
                 if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) {
                     chatWindow.removeChild(chatWindow.lastChild);
@@ -221,7 +211,6 @@
         micButton.addEventListener('click', () => { /* ... */ });
         sendButton.addEventListener('click', handleUserMessage);
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
-        // ... resto de funciones y eventos sin cambios ...
         function mostrarResultadosPacientes(resultados) {
             window.allResults = resultados;
             const tablaHTML = `<p>Aquí tienes un resumen:</p><table class="tabla-resultados"><thead><tr><th>Paciente</th><th>Fecha Atención</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${resultados.map((paciente, index) => `<tr><td>${paciente.PACIENTE||'N/A'}</td><td>${paciente.FecAte?new Date(paciente.FecAte+'T00:00:00').toLocaleDateString('es-ES'):'N/A'}</td><td>S/ ${paciente.CostoTotal||'0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${index})">Ver más</button></td></tr>`).join('')}</tbody></table>`;
