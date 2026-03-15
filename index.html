@@ -96,7 +96,7 @@
             border-radius: 20px;
             max-width: 90%;
             line-height: 1.5;
-            display: table; /* Para que se ajuste al contenido */
+            display: table;
         }
         .user-message {
             background-color: #007bff;
@@ -155,7 +155,9 @@
         #user-input:focus {
             border-color: #007bff;
         }
-        .action-button {
+        
+        /* --- NUEVO ESTILO PARA EL BOTÓN ÚNICO --- */
+        #action-button {
             background: #007bff;
             color: white;
             border: none;
@@ -163,22 +165,31 @@
             width: 44px;
             height: 44px;
             margin-left: 10px;
-            font-size: 20px;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             transition: background-color 0.2s, transform 0.2s;
+            position: relative; /* Para la animación de los íconos */
+            overflow: hidden;
         }
-        .action-button:hover {
+        #action-button:hover {
             background-color: #0056b3;
         }
-        #mic-button.recording {
+        #action-button.recording {
             background-color: #dc3545;
             transform: scale(1.1);
         }
+        #action-button svg {
+            position: absolute;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            width: 20px;
+            height: 20px;
+        }
+        .icon-mic { transform: scale(1); opacity: 1; }
+        .icon-send { transform: scale(0); opacity: 0; }
         
-        /* --- ESTILOS DE TABLAS Y MODALES (Simplificados) --- */
+        /* --- ESTILOS DE TABLAS Y MODALES --- */
         .tabla-resultados { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         .tabla-resultados th, .tabla-resultados td { padding: 10px; border: 1px solid #ddd; text-align: left; }
         .ver-mas-btn { background: none; border: none; color: #007bff; cursor: pointer; text-decoration: underline; }
@@ -189,13 +200,12 @@
     </style>
 </head>
 <body>
-
     <div class="main-container">
         <div class="app-container">
             <!-- Panel del Presentador -->
             <div class="presenter-panel">
                 <div class="presenter-video-container">
-                    <img id="presenter-video" src="URL_DE_TU_VIDEO_PRESENTADOR.gif" alt="Asistente Virtual">
+                    <img id="presenter-video" src="https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/videos/presentador.gif" alt="Asistente Virtual">
                 </div>
                 <h1>Manu, tu Asistente IA</h1>
                 <p>Estoy aquí para ayudarte a analizar los datos de emergencia de forma rápida y eficiente.</p>
@@ -206,34 +216,21 @@
                 <div id="chat-window"></div>
                 <div id="input-area">
                     <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
-                    <button id="mic-button" class="action-button" title="Grabar voz">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>
-                    </button>
-                    <button id="send-button" class="action-button" title="Enviar mensaje">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-up-short" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
+                    <!-- BOTÓN ÚNICO Y DINÁMICO -->
+                    <button id="action-button" title="Grabar voz">
+                        <svg id="mic-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-mic-fill icon-mic" viewBox="0 0 16 16"><path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/><path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/></svg>
+                        <svg id="send-icon" xmlns="http://www.w3.org/2000/svg" fill="currentColor" class="bi bi-arrow-up-short icon-send" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 12a.5.5 0 0 0 .5-.5V5.707l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 1 0 .708.708L7.5 5.707V11.5a.5.5 0 0 0 .5.5z"/></svg>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modales (sin cambios en estructura ) -->
-    <div id="detailsModal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn" id="close-patient-modal">&times;</span>
-        <h3>Detalles Completos del Registro</h3>
-        <div id="modal-body"></div>
-      </div>
-    </div>
-    <div id="doctorModal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn" id="close-doctor-modal">&times;</span>
-        <div id="doctor-modal-body"></div>
-      </div>
-    </div>
-
+    <!-- Modales (sin cambios ) -->
+    <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-patient-modal">&times;</span><h3>Detalles Completos del Registro</h3><div id="modal-body"></div></div></div>
+    <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-doctor-modal">&times;</span><div id="doctor-modal-body"></div></div></div>
     <script>
-        // --- CÓDIGO JAVASCRIPT RENOVADO ---
+        // --- CÓDIGO JAVASCRIPT RENOVADO (v3.1) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
@@ -241,8 +238,9 @@
         // --- Selectores del DOM ---
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
-        const sendButton = document.getElementById('send-button');
-        const micButton = document.getElementById('mic-button');
+        const actionButton = document.getElementById('action-button');
+        const micIcon = document.getElementById('mic-icon');
+        const sendIcon = document.getElementById('send-icon');
         const patientModal = document.getElementById('detailsModal');
         const doctorModal = document.getElementById('doctorModal');
         
@@ -265,13 +263,14 @@
 
             addMessage(pregunta, 'user-message');
             userInput.value = '';
+            updateButtonState(); // Actualiza el botón a micrófono
             conversationHistory.push({ role: 'user', content: pregunta });
             
             const thinkingMessage = addMessage('<div class="thinking-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>', 'ia-message');
 
             try {
                 const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', {
-                    body: { pregunta, historial: conversationHistory.slice(-6) } // Enviamos los últimos 6 mensajes
+                    body: { pregunta, historial: conversationHistory.slice(-6) }
                 });
 
                 if (functionError) throw functionError;
@@ -283,13 +282,9 @@
                     conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
                 } else if (iaResponse.tipo === 'consulta_db' && iaResponse.plan) {
                     const plan = iaResponse.plan;
-                    
-                    // Construcción de la consulta de Supabase
                     let query = supabase.from(plan.tabla).select(plan.columnas || '*');
                     if (plan.filtros) {
                         plan.filtros.forEach(filtro => {
-                            // **AQUÍ ESTÁ LA CORRECCIÓN DEL ERROR**
-                            // Usamos el método correcto (ej: .ilike, .eq) en lugar de acceso por corchetes.
                             if (typeof query[filtro.operador] === 'function') {
                                 query = query[filtro.operador](filtro.columna, filtro.valor);
                             }
@@ -297,7 +292,6 @@
                     }
                     if (plan.limite) { query = query.limit(plan.limite); }
 
-                    // Ejecución de la consulta
                     const { data: resultados, error: dbError } = await query;
                     if (dbError) throw dbError;
 
@@ -308,10 +302,8 @@
                     } else {
                         iaContent = `Encontré ${resultados.length} resultado(s).`;
                         if (plan.tabla === 'doctores') {
-                            // Aquí iría la lógica para mostrar doctores (simplificada por ahora)
                             addMessage(`Resultados de Doctores: <pre>${JSON.stringify(resultados, null, 2)}</pre>`, 'ia-message');
                         } else {
-                            // Lógica para mostrar pacientes
                             mostrarResultadosPacientes(resultados);
                         }
                     }
@@ -321,16 +313,14 @@
                 }
             } catch (error) {
                 console.error('Error en el proceso:', error);
-                if (thinkingMessage.parentNode) {
-                    chatWindow.removeChild(thinkingMessage);
-                }
+                if (thinkingMessage.parentNode) chatWindow.removeChild(thinkingMessage);
                 addMessage(`Lo siento, ocurrió un error: ${error.message}`, 'error-message');
             }
         }
         
-        // --- Funciones para mostrar resultados (simplificadas para el ejemplo) ---
+        // --- Funciones para mostrar resultados ---
         function mostrarResultadosPacientes(resultados) {
-            window.allResults = resultados; // Guardar para el modal
+            window.allResults = resultados;
             const tablaHTML = `
                 <p>Aquí tienes un resumen de los pacientes encontrados:</p>
                 <table class="tabla-resultados">
@@ -360,18 +350,16 @@
             patientModal.classList.add('active');
         };
 
-        // --- Lógica de Reconocimiento de Voz (sin cambios mayores) ---
+        // --- Lógica de Reconocimiento de Voz ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'es-ES';
-            recognition.interimResults = false;
+            recognition.continuous = false; recognition.lang = 'es-ES'; recognition.interimResults = false;
             recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                userInput.value = transcript;
+                userInput.value = event.results[0][0].transcript;
                 stopRecording();
+                updateButtonState();
                 setTimeout(handleUserMessage, 200);
             };
             recognition.onerror = (event) => {
@@ -380,27 +368,54 @@
                 stopRecording();
             };
         } else {
-            micButton.style.display = 'none';
+            actionButton.style.display = 'none'; // Oculta el botón si no hay soporte
         }
 
         let isRecording = false;
         function startRecording() {
             if (isRecording || !recognition) return;
             isRecording = true;
-            micButton.classList.add('recording');
+            actionButton.classList.add('recording');
             recognition.start();
         }
         function stopRecording() {
             if (!isRecording || !recognition) return;
             isRecording = false;
-            micButton.classList.remove('recording');
+            actionButton.classList.remove('recording');
             recognition.stop();
         }
 
+        // --- NUEVA LÓGICA PARA EL BOTÓN DINÁMICO ---
+        function updateButtonState() {
+            if (userInput.value.trim() !== '') {
+                // Muestra Enviar, oculta Micrófono
+                micIcon.style.transform = 'scale(0)'; micIcon.style.opacity = '0';
+                sendIcon.style.transform = 'scale(1)'; sendIcon.style.opacity = '1';
+                actionButton.setAttribute('title', 'Enviar mensaje');
+            } else {
+                // Muestra Micrófono, oculta Enviar
+                micIcon.style.transform = 'scale(1)'; micIcon.style.opacity = '1';
+                sendIcon.style.transform = 'scale(0)'; sendIcon.style.opacity = '0';
+                actionButton.setAttribute('title', 'Grabar voz');
+            }
+        }
+
         // --- Event Listeners ---
-        sendButton.addEventListener('click', handleUserMessage);
-        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleUserMessage(); } });
-        micButton.addEventListener('click', () => isRecording ? stopRecording() : startRecording());
+        actionButton.addEventListener('click', () => {
+            if (userInput.value.trim() !== '') {
+                handleUserMessage();
+            } else {
+                isRecording ? stopRecording() : startRecording();
+            }
+        });
+
+        userInput.addEventListener('input', updateButtonState);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleUserMessage();
+            }
+        });
         
         // Cierre de modales
         document.getElementById('close-patient-modal').onclick = () => patientModal.classList.remove('active');
@@ -410,8 +425,9 @@
             if (event.target == doctorModal) doctorModal.classList.remove('active');
         };
 
-        // --- Mensaje de bienvenida inicial ---
+        // --- INICIALIZACIÓN ---
         addMessage("¡Hola! Soy Manu, tu asistente de análisis. ¿Qué información necesitas hoy?", 'ia-message');
+        updateButtonState(); // Llama al inicio para asegurar el estado correcto del botón
 
     </script>
 </body>
