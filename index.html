@@ -66,7 +66,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-patient-modal">&times;</span><h3>Detalles Completos del Registro</h3><div id="modal-body"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="close-doctor-modal">&times;</span><div id="doctor-modal-body"></div></div></div>
     <script>
-        // --- CÓDIGO JAVASCRIPT CORREGIDO Y REFORZADO (v3.6) ---
+        // --- CÓDIGO JAVASCRIPT CORREGIDO Y REFORZADO (v3.7) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
@@ -92,12 +92,12 @@
             const pregunta = userInput.value.trim();
             if (!pregunta) return;
 
-            // Limpia el input DESPUÉS de guardar la pregunta
-            userInput.value = ''; 
-            
             addMessage(pregunta, 'user-message');
             conversationHistory.push({ role: 'user', content: pregunta });
             
+            // **LA CORRECCIÓN CLAVE:** Limpiar el input DESPUÉS de haber procesado la pregunta
+            userInput.value = ''; 
+
             const thinkingMessage = addMessage('<div class="thinking-indicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>', 'ia-message');
 
             try {
@@ -188,10 +188,9 @@
 
         // 2. Asignar el evento de 'Enter' al input.
         userInput.addEventListener('keypress', (e) => {
-            // Si la tecla presionada es 'Enter' y la tecla Shift NO está presionada
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Previene el salto de línea en el input
-                handleUserMessage(); // Llama a la misma función que el botón
+                e.preventDefault();
+                handleUserMessage();
             }
         });
         
