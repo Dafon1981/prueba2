@@ -6,7 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v5.3 (ESTABLES - SIN CAMBIOS ) --- */
+        /* --- ESTILOS v6.1 (CON ESTILOS PARA TARJETAS DE DOCTOR ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -36,7 +36,17 @@
         #action-button { background-color: transparent; border: none; padding: 0; margin-left: 15px; cursor: pointer; width: 60px; height: 60px; flex-shrink: 0; }
         #action-button img { width: 100%; height: 100%; transition: transform 0.2s; }
         #action-button:hover img { transform: scale(1.1); }
-        .modal { display: none; /* ... */ }
+        
+        /* --- NUEVOS ESTILOS PARA TARJETAS DE DOCTOR --- */
+        .doctor-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-top: 10px; }
+        .doctor-card h4 { margin: 0 0 10px 0; font-size: 1.1em; }
+        .doctor-card p { margin: 0 0 10px 0; font-size: 0.9em; }
+        .ver-mas-btn { background: none; border: none; color: var(--secondary-color); cursor: pointer; text-decoration: underline; padding: 0; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .modal.active { display: flex; }
+        .modal-content { background-color: #fefefe; padding: 25px; border: 1px solid #888; width: 90%; max-width: 550px; border-radius: 10px; position: relative; }
+        .close-btn { position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -66,7 +76,7 @@
     <div id="doctorModal" class="modal"></div>
 
     <script>
-        // --- CÓDIGO JAVASCRIPT v6.0 (CON LÓGICA DE PREDICCIÓN ) ---
+        // --- CÓDIGO JAVASCRIPT v6.1 (CON CORRECCIÓN PARA DOCTORES ) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
@@ -78,6 +88,7 @@
         const actionButtonIcon = document.getElementById('action-button-icon');
         
         let conversationHistory = [];
+        let allDoctorResults = []; // Para guardar los resultados de doctores
 
         const URL_BOTON_ROJO = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_rojo.png';
         const URL_BOTON_VERDE = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_verde.png';
@@ -106,28 +117,21 @@
         document.addEventListener('DOMContentLoaded', () => {
             presenterAvatar.src = NEUTRO_URL;
             setAvatar('saludo');
-            addMessage("¡Hola! Soy Manu, tu asistente. ¿En qué puedo ayudarte hoy?", 'ia-message');
+            // --- MENSAJE DE SALUDO ACTUALIZADO ---
+            addMessage("Soy asistente de recepcion de emergencia ¿En qué puedo ayudarte hoy?", 'ia-message');
             userInput.focus();
             updateActionButton();
         });
 
-        // --- ¡NUEVA FUNCIÓN DE PREDICCIÓN! ---
         function predecirUbicacionFUA(fechaRegistro) {
-            if (!fechaRegistro) {
-                return "No se pudo determinar la fecha del registro para hacer una predicción.";
-            }
+            if (!fechaRegistro) return "No se pudo determinar la fecha del registro para hacer una predicción.";
             const fechaReg = new Date(fechaRegistro);
             const hoy = new Date();
             const diffTime = Math.abs(hoy - fechaReg);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays <= 7) {
-                return "Probablemente se encuentre en **Recepción (Cajas)** o en proceso de **Asignación**.";
-            } else if (diffDays <= 21) {
-                return "Es posible que esté en **Auditoría**, **Digitación** o **Archivos de digitación**.";
-            } else {
-                return "Debido al tiempo transcurrido, es muy probable que ya se encuentre en **Archivo Central**.";
-            }
+            if (diffDays <= 7) return "Probablemente se encuentre en **Recepción (Cajas)** o en proceso de **Asignación**.";
+            else if (diffDays <= 21) return "Es posible que esté en **Auditoría**, **Digitación** o **Archivos de digitación**.";
+            else return "Debido al tiempo transcurrido, es muy probable que ya se encuentre en **Archivo Central**.";
         }
 
         async function handleUserMessage() {
@@ -148,47 +152,71 @@
                     setAvatar('conversacion');
                     addMessage(iaResponse.respuesta, 'ia-message');
                 } 
-                // --- ¡NUEVO MANEJO DE PREDICCIÓN! ---
                 else if (iaResponse.tipo === 'prediccion_fua') {
                     const { data: resultados, error: dbError } = await supabase.from(iaResponse.plan.tabla).select(iaResponse.plan.columnas).ilike(iaResponse.plan.filtros[0].columna, iaResponse.plan.filtros[0].valor);
                     if (dbError) throw dbError;
-
-                    if (!resultados || resultados.length === 0) {
-                        setAvatar('no');
-                        addMessage('No encontré la FUA que mencionas para hacer una predicción.', 'ia-message');
-                    } else {
+                    if (!resultados || resultados.length === 0) { setAvatar('no'); addMessage('No encontré la FUA que mencionas.', 'ia-message'); }
+                    else {
                         setAvatar('si');
                         const registro = resultados[0];
                         const prediccion = predecirUbicacionFUA(registro.FechaRegistro);
-                        const mensaje = `Para el paciente <strong>${registro.PACIENTE}</strong>, con fecha de registro ${new Date(registro.FechaRegistro + 'T00:00:00').toLocaleDateString('es-ES')}, mi predicción de ubicación es la siguiente:   
+                        addMessage(`Para el paciente <strong>${registro.PACIENTE}</strong> (registro del ${new Date(registro.FechaRegistro + 'T00:00:00').toLocaleDateString('es-ES')}), mi predicción es:   
   
-${prediccion}  
-  
-<em>(Recuerda que esto es una estimación basada en el flujo de trabajo habitual).</em>`;
-                        addMessage(mensaje, 'ia-message');
+${prediccion}`, 'ia-message');
                     }
                 }
                 else if (iaResponse.tipo === 'consulta_db') {
                     const { data: resultados, error: dbError } = await supabase.from(iaResponse.plan.tabla).select(iaResponse.plan.columnas).ilike(iaResponse.plan.filtros[0].columna, iaResponse.plan.filtros[0].valor);
                     if (dbError) throw dbError;
                     if (!resultados || resultados.length === 0) { setAvatar('no'); addMessage('No encontré resultados.', 'ia-message'); }
-                    else { setAvatar('si'); addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message'); mostrarResultadosPacientes(resultados); }
+                    else {
+                        setAvatar('si');
+                        addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message');
+                        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
+                        if (iaResponse.plan.tabla === 'doctores') {
+                            mostrarResultadosDoctores(resultados);
+                        } else {
+                            mostrarResultadosPacientes(resultados);
+                        }
+                    }
                 } else { throw new Error("Respuesta inesperada."); }
             } catch (error) { setAvatar('no'); console.error('Error:', error); if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) chatWindow.removeChild(chatWindow.lastChild); addMessage(`Error: ${error.message}`, 'error-message'); }
         }
 
-        actionButton.addEventListener('click', () => {
-            if (userInput.value.trim() !== '') handleUserMessage();
-            else console.log("Iniciar grabación de voz...");
-        });
+        actionButton.addEventListener('click', () => { if (userInput.value.trim() !== '') handleUserMessage(); else console.log("Iniciar grabación de voz..."); });
         userInput.addEventListener('input', updateActionButton);
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); }
-        });
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
 
         function addMessage(content, type) { const messageDiv = document.createElement('div'); messageDiv.classList.add('message'); const contentDiv = document.createElement('div'); contentDiv.classList.add('message-content'); if (type === 'user-message') messageDiv.classList.add('user-message'); if (type === 'ia-message') messageDiv.classList.add('ia-message'); contentDiv.innerHTML = content; messageDiv.appendChild(contentDiv); chatWindow.appendChild(messageDiv); chatWindow.scrollTop = chatWindow.scrollHeight; }
-        function mostrarResultadosPacientes(resultados) { window.allResults = resultados; const tablaHTML = `<p>Resumen:</p><table class="tabla-resultados"><thead><tr><th>Paciente</th><th>Fecha</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${resultados.map((p, i) => `<tr><td>${p.PACIENTE||'N/A'}</td><td>${p.FecAte?new Date(p.FecAte+'T00:00:00').toLocaleDateString('es-ES'):'N/A'}</td><td>S/ ${p.CostoTotal||'0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${i})">Ver más</button></td></tr>`).join('')}</tbody></table>`; addMessage(tablaHTML, 'ia-message'); }
-        window.showPatientDetails = (index) => { const item = window.allResults[index]; if (!item) return; let detailsHTML = ''; for (const key in item) { if (key !== 'id') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</p>`; } } document.getElementById('detailsModal').innerHTML = `<div class="modal-content"><span class="close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</span><h3>Detalles</h3>${detailsHTML}</div>`; document.getElementById('detailsModal').style.display = "flex"; };
+        
+        function mostrarResultadosPacientes(resultados) { window.allResults = resultados; const tablaHTML = `<p>Resumen:</p><table class="tabla-resultados"><thead><tr><th>Paciente</th><th>Fecha</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${resultados.slice(0,5).map((p, i) => `<tr><td>${p.PACIENTE||'N/A'}</td><td>${p.FecAte?new Date(p.FecAte+'T00:00:00').toLocaleDateString('es-ES'):'N/A'}</td><td>S/ ${p.CostoTotal||'0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${i})">Ver más</button></td></tr>`).join('')}</tbody></table>`; addMessage(tablaHTML, 'ia-message'); }
+        window.showPatientDetails = (index) => { const item = window.allResults[index]; if (!item) return; let detailsHTML = ''; for (const key in item) { if (key !== 'id') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</p>`; } } document.getElementById('detailsModal').innerHTML = `<div class="modal-content"><span class="close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</span><h3>Detalles</h3>${detailsHTML}</div>`; document.getElementById('detailsModal').classList.add('active'); };
+
+        // --- ¡NUEVAS FUNCIONES PARA DOCTORES! ---
+        function mostrarResultadosDoctores(resultados) {
+            allDoctorResults = resultados; // Guardamos los resultados de doctores
+            const cardsHTML = resultados.map((doc, index) => `
+                <div class="doctor-card">
+                    <h4>${doc.nombre || 'Sin nombre'}</h4>
+                    <p><strong>Especialidad:</strong> ${doc.especialidad || 'N/A'} | <strong>RNE:</strong> ${doc.rne || 'N/A'}</p>
+                    <button class="ver-mas-btn" onclick="showDoctorDetails(${index})">Ver Ficha Completa</button>
+                </div>
+            `).join('');
+            addMessage(cardsHTML, 'ia-message');
+        }
+
+        window.showDoctorDetails = (index) => {
+            const doc = allDoctorResults[index];
+            if (!doc) return;
+            let detailsHTML = '';
+            for (const key in doc) {
+                if (key !== 'id' && key !== 'foto' && key !== 'firma') { // Excluimos imágenes del texto
+                    detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${doc[key] || 'N/A'}</p>`;
+                }
+            }
+            document.getElementById('doctorModal').innerHTML = `<div class="modal-content"><span class="close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</span><h3>Ficha del Doctor</h3>${detailsHTML}</div>`;
+            document.getElementById('doctorModal').classList.add('active');
+        };
     </script>
 </body>
 </html>
