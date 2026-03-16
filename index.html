@@ -6,7 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v5.3 (DISEÑO DE COLUMNA ÚNICA ) --- */
+        /* --- ESTILOS v5.3 (ESTABLES - SIN CAMBIOS ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -16,92 +16,27 @@
             --text-primary: #212529;
             --ia-bubble-color: #e9e9eb;
         }
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
         .app-container { position: relative; height: 100vh; width: 100%; }
-        .background-image {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center;
-            background-size: cover; z-index: 1;
-        }
-        .chat-panel {
-            position: relative; z-index: 2; height: 100%; width: 100%;
-            max-width: 800px; margin: 0 auto;
-            background-color: var(--surface-color);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            display: flex; flex-direction: column;
-            box-shadow: 0 0 30px rgba(0,0,0,0.1);
-        }
-
-        /* --- CABECERA (SIN CAMBIOS) --- */
-        .chat-header {
-            display: flex; align-items: center; padding: 15px 20px;
-            background-color: var(--header-bg-color);
-            border-bottom: 1px solid rgba(0,0,0,0.1);
-            flex-shrink: 0;
-        }
+        .background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center; background-size: cover; z-index: 1; }
+        .chat-panel { position: relative; z-index: 2; height: 100%; width: 100%; max-width: 800px; margin: 0 auto; background-color: var(--surface-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
+        .chat-header { display: flex; align-items: center; padding: 15px 20px; background-color: var(--header-bg-color); border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; }
         .header-logo { width: 40px; height: 40px; margin-right: 15px; }
         .header-info h1 { font-size: 1.2em; margin: 0; color: var(--header-text-color); }
         .header-info p { font-size: 0.8em; margin: 0; color: var(--header-text-color); opacity: 0.8; }
-
-        /* --- AVATAR FLOTANTE (REPOSICIONADO) --- */
-        .avatar-container {
-            position: absolute;
-            top: 20px; /* ¡CAMBIO! Subido más arriba */
-            right: 20px;
-            width: 120px; height: 150px; border-radius: 15px;
-            overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.7);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; opacity: 0.9;
-        }
+        .avatar-container { position: absolute; top: 20px; right: 20px; width: 120px; height: 150px; border-radius: 15px; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.7); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; opacity: 0.9; }
         #presenter-avatar { width: 100%; height: 100%; object-fit: cover; }
-
-        /* --- VENTANA DE CHAT Y MENSAJES (CON COLUMNA ÚNICA) --- */
         #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
-        .message {
-            display: flex;
-            margin-bottom: 15px;
-            max-width: 85%;
-            margin-right: auto; /* ¡CAMBIO! Todos los mensajes a la izquierda */
-        }
-        .message-content {
-            padding: 12px 18px;
-            border-radius: 20px;
-            line-height: 1.5;
-        }
-        /* Se elimina el estilo específico de .user-message que lo alineaba a la derecha */
-        .user-message .message-content {
-            background-color: var(--secondary-color);
-            color: white;
-            border-bottom-left-radius: 5px; /* Ahora el detalle va a la izquierda */
-        }
-        .ia-message .message-content {
-            background-color: var(--ia-bubble-color);
-            color: var(--text-primary);
-            border-bottom-left-radius: 5px;
-        }
-
-        /* --- ÁREA DE ENTRADA Y BOTÓN (SIN CAMBIOS) --- */
-        #input-area {
-            display: flex; padding: 15px; border-top: 1px solid rgba(0,0,0,0.1);
-            align-items: center; background-color: rgba(248, 249, 250, 0.9); flex-shrink: 0;
-        }
-        #user-input {
-            flex-grow: 1; padding: 15px 20px; border: 1px solid #ccc;
-            border-radius: 30px; font-size: 16px; resize: none; outline: none;
-        }
-        #action-button {
-            background-color: transparent; border: none; padding: 0; margin-left: 15px;
-            cursor: pointer; width: 60px; height: 60px;
-            flex-shrink: 0;
-        }
+        .message { display: flex; margin-bottom: 15px; max-width: 85%; margin-right: auto; }
+        .message-content { padding: 12px 18px; border-radius: 20px; line-height: 1.5; }
+        .user-message .message-content { background-color: var(--secondary-color); color: white; border-bottom-left-radius: 5px; }
+        .ia-message .message-content { background-color: var(--ia-bubble-color); color: var(--text-primary); border-bottom-left-radius: 5px; }
+        #input-area { display: flex; padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); align-items: center; background-color: rgba(248, 249, 250, 0.9); flex-shrink: 0; }
+        #user-input { flex-grow: 1; padding: 15px 20px; border: 1px solid #ccc; border-radius: 30px; font-size: 16px; resize: none; outline: none; }
+        #action-button { background-color: transparent; border: none; padding: 0; margin-left: 15px; cursor: pointer; width: 60px; height: 60px; flex-shrink: 0; }
         #action-button img { width: 100%; height: 100%; transition: transform 0.2s; }
         #action-button:hover img { transform: scale(1.1); }
-        
-        /* --- MODALES (SIN CAMBIOS) --- */
-        .modal { /* ... */ }
+        .modal { display: none; /* ... */ }
     </style>
 </head>
 <body>
@@ -127,16 +62,15 @@
             </footer>
         </div>
     </div>
-    <!-- Modales sin cambios -->
     <div id="detailsModal" class="modal"></div>
     <div id="doctorModal" class="modal"></div>
+
     <script>
-        // --- CÓDIGO JAVASCRIPT v4.9 (ESTABLE - SIN CAMBIOS FUNCIONALES) ---
+        // --- CÓDIGO JAVASCRIPT v6.0 (CON LÓGICA DE PREDICCIÓN ) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
-        // --- Selectores del DOM ---
         const presenterAvatar = document.getElementById('presenter-avatar');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
@@ -145,11 +79,9 @@
         
         let conversationHistory = [];
 
-        // --- URLs para los iconos del botón ---
         const URL_BOTON_ROJO = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_rojo.png';
         const URL_BOTON_VERDE = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_verde.png';
 
-        // --- LÓGICA DE AVATAR (estable ) ---
         const gifs = {
             saludo: ['01_saludo.gif'],
             si: ['si_02.gif', 'si_03.gif', 'si_04.gif'],
@@ -157,6 +89,7 @@
             conversacion: ['con_01.gif', 'con_02.gif', 'con_03.gif']
         };
         const NEUTRO_URL = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/neutro.jpg';
+        
         function setAvatar(tipo ) {
             const gifList = gifs[tipo] || gifs.conversacion;
             const randomGif = gifList[Math.floor(Math.random() * gifList.length)];
@@ -165,18 +98,11 @@
             setTimeout(() => { presenterAvatar.src = NEUTRO_URL; }, 2500);
         }
 
-        // --- LÓGICA DEL BOTÓN DE ACCIÓN (estable) ---
         function updateActionButton() {
-            if (userInput.value.trim() === '') {
-                actionButtonIcon.src = URL_BOTON_ROJO;
-                actionButton.title = "Grabar voz";
-            } else {
-                actionButtonIcon.src = URL_BOTON_VERDE;
-                actionButton.title = "Enviar mensaje";
-            }
+            actionButtonIcon.src = (userInput.value.trim() === '') ? URL_BOTON_ROJO : URL_BOTON_VERDE;
+            actionButton.title = (userInput.value.trim() === '') ? "Grabar voz" : "Enviar mensaje";
         }
 
-        // --- INICIALIZACIÓN ---
         document.addEventListener('DOMContentLoaded', () => {
             presenterAvatar.src = NEUTRO_URL;
             setAvatar('saludo');
@@ -185,7 +111,25 @@
             updateActionButton();
         });
 
-        // --- LÓGICA DE CHAT (estable) ---
+        // --- ¡NUEVA FUNCIÓN DE PREDICCIÓN! ---
+        function predecirUbicacionFUA(fechaRegistro) {
+            if (!fechaRegistro) {
+                return "No se pudo determinar la fecha del registro para hacer una predicción.";
+            }
+            const fechaReg = new Date(fechaRegistro);
+            const hoy = new Date();
+            const diffTime = Math.abs(hoy - fechaReg);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays <= 7) {
+                return "Probablemente se encuentre en **Recepción (Cajas)** o en proceso de **Asignación**.";
+            } else if (diffDays <= 21) {
+                return "Es posible que esté en **Auditoría**, **Digitación** o **Archivos de digitación**.";
+            } else {
+                return "Debido al tiempo transcurrido, es muy probable que ya se encuentre en **Archivo Central**.";
+            }
+        }
+
         async function handleUserMessage() {
             const pregunta = userInput.value.trim();
             if (!pregunta) return;
@@ -194,37 +138,54 @@
             updateActionButton();
             conversationHistory.push({ role: 'user', content: pregunta });
             addMessage('<span>Analizando...</span>', 'ia-message');
+
             try {
-                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta: pregunta, historial: conversationHistory.slice(-4) } });
+                const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta: pregunta, historial: conversationHistory.slice(-6) } });
                 if (planError) throw planError;
                 chatWindow.removeChild(chatWindow.lastChild);
-                if (iaResponse.tipo === 'charla') { setAvatar('conversacion'); addMessage(iaResponse.respuesta, 'ia-message'); }
+
+                if (iaResponse.tipo === 'charla') {
+                    setAvatar('conversacion');
+                    addMessage(iaResponse.respuesta, 'ia-message');
+                } 
+                // --- ¡NUEVO MANEJO DE PREDICCIÓN! ---
+                else if (iaResponse.tipo === 'prediccion_fua') {
+                    const { data: resultados, error: dbError } = await supabase.from(iaResponse.plan.tabla).select(iaResponse.plan.columnas).ilike(iaResponse.plan.filtros[0].columna, iaResponse.plan.filtros[0].valor);
+                    if (dbError) throw dbError;
+
+                    if (!resultados || resultados.length === 0) {
+                        setAvatar('no');
+                        addMessage('No encontré la FUA que mencionas para hacer una predicción.', 'ia-message');
+                    } else {
+                        setAvatar('si');
+                        const registro = resultados[0];
+                        const prediccion = predecirUbicacionFUA(registro.FechaRegistro);
+                        const mensaje = `Para el paciente <strong>${registro.PACIENTE}</strong>, con fecha de registro ${new Date(registro.FechaRegistro + 'T00:00:00').toLocaleDateString('es-ES')}, mi predicción de ubicación es la siguiente:   
+  
+${prediccion}  
+  
+<em>(Recuerda que esto es una estimación basada en el flujo de trabajo habitual).</em>`;
+                        addMessage(mensaje, 'ia-message');
+                    }
+                }
                 else if (iaResponse.tipo === 'consulta_db') {
                     const { data: resultados, error: dbError } = await supabase.from(iaResponse.plan.tabla).select(iaResponse.plan.columnas).ilike(iaResponse.plan.filtros[0].columna, iaResponse.plan.filtros[0].valor);
                     if (dbError) throw dbError;
                     if (!resultados || resultados.length === 0) { setAvatar('no'); addMessage('No encontré resultados.', 'ia-message'); }
                     else { setAvatar('si'); addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message'); mostrarResultadosPacientes(resultados); }
                 } else { throw new Error("Respuesta inesperada."); }
-            } catch (error) { setAvatar('no'); console.error('Error:', error); if (chatWindow.lastChild.textContent.includes('Analizando')) chatWindow.removeChild(chatWindow.lastChild); addMessage(`Error: ${error.message}`, 'error-message'); }
+            } catch (error) { setAvatar('no'); console.error('Error:', error); if (chatWindow.lastChild && chatWindow.lastChild.textContent.includes('Analizando')) chatWindow.removeChild(chatWindow.lastChild); addMessage(`Error: ${error.message}`, 'error-message'); }
         }
 
-        // --- EVENT LISTENERS (estables) ---
         actionButton.addEventListener('click', () => {
-            if (userInput.value.trim() !== '') {
-                handleUserMessage();
-            } else {
-                console.log("Iniciar grabación de voz...");
-            }
+            if (userInput.value.trim() !== '') handleUserMessage();
+            else console.log("Iniciar grabación de voz...");
         });
         userInput.addEventListener('input', updateActionButton);
         userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleUserMessage();
-            }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); }
         });
 
-        // --- RESTO DE FUNCIONES (estables) ---
         function addMessage(content, type) { const messageDiv = document.createElement('div'); messageDiv.classList.add('message'); const contentDiv = document.createElement('div'); contentDiv.classList.add('message-content'); if (type === 'user-message') messageDiv.classList.add('user-message'); if (type === 'ia-message') messageDiv.classList.add('ia-message'); contentDiv.innerHTML = content; messageDiv.appendChild(contentDiv); chatWindow.appendChild(messageDiv); chatWindow.scrollTop = chatWindow.scrollHeight; }
         function mostrarResultadosPacientes(resultados) { window.allResults = resultados; const tablaHTML = `<p>Resumen:</p><table class="tabla-resultados"><thead><tr><th>Paciente</th><th>Fecha</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${resultados.map((p, i) => `<tr><td>${p.PACIENTE||'N/A'}</td><td>${p.FecAte?new Date(p.FecAte+'T00:00:00').toLocaleDateString('es-ES'):'N/A'}</td><td>S/ ${p.CostoTotal||'0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${i})">Ver más</button></td></tr>`).join('')}</tbody></table>`; addMessage(tablaHTML, 'ia-message'); }
         window.showPatientDetails = (index) => { const item = window.allResults[index]; if (!item) return; let detailsHTML = ''; for (const key in item) { if (key !== 'id') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</p>`; } } document.getElementById('detailsModal').innerHTML = `<div class="modal-content"><span class="close-btn" onclick="this.parentElement.parentElement.style.display='none'">&times;</span><h3>Detalles</h3>${detailsHTML}</div>`; document.getElementById('detailsModal').style.display = "flex"; };
