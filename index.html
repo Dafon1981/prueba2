@@ -150,20 +150,27 @@
         async function handleUserMessage() {
             const pregunta = userInput.value.trim();
             if (!pregunta) return;
+
             addMessage(pregunta, 'user-message');
             userInput.value = '';
             updateActionButton();
             conversationHistory.push({ role: 'user', content: pregunta });
+
             const analyzingMsg = addMessage('<span>Analizando...</span>', 'ia-message');
 
             try {
+                const payload = {
+                    pregunta: pregunta,
+                    historial: conversationHistory.slice(-6)
+                };
+
                 const { data: iaResponse, error: planError } = await supabase.functions.invoke('chat-con-ia', { 
-                    body: { pregunta: pregunta, historial: conversationHistory.slice(-6) } 
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
                 });
 
                 if (planError) throw planError;
 
-                // Remover "Analizando..."
                 if (chatWindow.lastChild === analyzingMsg) {
                     chatWindow.removeChild(analyzingMsg);
                 }
@@ -173,11 +180,9 @@
                     addMessage(iaResponse.respuesta, 'ia-message'); 
                 } 
                 else if (iaResponse.tipo === 'prediccion_fua') { 
-                    // Aquí iría la lógica de predicción (puedes completarla después)
                     addMessage("Predicción de ubicación en proceso...", 'ia-message');
                 }
                 else if (iaResponse.tipo === 'consulta_db') { 
-                    // Aquí iría la lógica de mostrar resultados (puedes completarla después)
                     addMessage("Consulta a base de datos en proceso...", 'ia-message');
                 } 
                 else { 
@@ -197,7 +202,6 @@
                     mensajeError += `<br><small>Detalle técnico: ${error.message}</small>`;
                 }
                 
-                // Remover "Analizando..." si aún está
                 if (chatWindow.lastChild === analyzingMsg) {
                     chatWindow.removeChild(analyzingMsg);
                 }
@@ -206,7 +210,6 @@
             }
         }
 
-        // Reconocimiento de voz (sin cambios)
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let speechTimeout;
@@ -299,7 +302,7 @@
             messageDiv.appendChild(contentDiv); 
             chatWindow.appendChild(messageDiv); 
             chatWindow.scrollTop = chatWindow.scrollHeight; 
-            return messageDiv; // retornamos para poder removerlo después si es necesario
+            return messageDiv;
         }
 
         function mostrarResultadosPacientes(resultados) { 
