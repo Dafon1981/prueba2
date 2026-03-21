@@ -6,7 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v7.3 (CON TABLA PAGINADA ) --- */
+        /* --- ESTILOS v7.3 (ESTABLES - SIN CAMBIOS ) --- */
         :root { --primary-color: #005A9C; --secondary-color: #007bff; --header-bg-color: #001f3f; --header-text-color: #ffffff; --surface-color: rgba(255, 255, 255, 0.85); --text-primary: #212529; --ia-bubble-color: #e9e9eb; --error-color: #dc3545; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
         .app-container { position: relative; height: 100vh; width: 100%; }
@@ -31,8 +31,6 @@
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
         #action-button img { width: 100%; height: 100%; transition: transform 0.2s; }
         #action-button:hover img { transform: scale(1.1); }
-        
-        /* --- NUEVOS ESTILOS PARA LA TABLA DE RESULTADOS --- */
         .results-table-container { background-color: #fff; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .results-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
         .results-table th, .results-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; text-align: left; }
@@ -42,11 +40,6 @@
         .pagination-controls button { background-color: var(--secondary-color); color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
         .pagination-controls button:disabled { background-color: #ced4da; cursor: not-allowed; }
         .ver-mas-btn { background: none; border: none; color: var(--secondary-color); cursor: pointer; text-decoration: underline; padding: 0; }
-        
-        .doctor-card { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin-top: 10px; }
-        .doctor-card h4 { margin: 0 0 10px 0; font-size: 1.1em; }
-        .doctor-card p { margin: 0 0 10px 0; font-size: 0.9em; }
-        
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
         .modal.active { display: flex; }
         .modal-content { background-color: #fefefe; padding: 25px; border: 1px solid #888; width: 90%; max-width: 550px; border-radius: 10px; position: relative; }
@@ -79,12 +72,11 @@
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="closePatientModal">×</span><div id="detailsModalContent"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="closeDoctorModal">×</span><div id="doctorModalContent"></div></div></div>
     <script>
-        // --- CÓDIGO JAVASCRIPT v7.3 (CON TABLA PAGINADA) ---
+        // --- CÓDIGO JAVASCRIPT v7.4 (PAGINACIÓN PARA DOCTORES) ---
         const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
-        // --- Selectores del DOM (sin cambios) ---
         const presenterAvatar = document.getElementById('presenter-avatar');
         const chatWindow = document.getElementById('chat-window');
         const userInput = document.getElementById('user-input');
@@ -98,8 +90,8 @@
         let conversationHistory = [];
         let allPatientResults = [];
         let allDoctorResults = [];
-        let currentPage = 0; // ¡NUEVO! Para controlar la paginación
-        const ITEMS_PER_PAGE = 10; // ¡NUEVO!
+        let currentPage = 0;
+        const ITEMS_PER_PAGE = 10;
 
         const URL_BOTON_ROJO = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_rojo.png';
         const URL_BOTON_VERDE = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_verde.png';
@@ -113,7 +105,6 @@
 
         function predecirUbicacionFUA(fechaRegistro) { if (!fechaRegistro) return "No se pudo determinar la fecha del registro."; const fechaReg = new Date(fechaRegistro); const hoy = new Date(); const diffTime = Math.abs(hoy - fechaReg); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); if (diffDays <= 7) return "Probablemente en **Recepción (Cajas)** o **Asignación**."; else if (diffDays <= 21) return "Posiblemente en **Auditoría**, **Digitación** o **Archivos de digitación**."; else return "Muy probable que ya se encuentre en **Archivo Central**."; }
 
-        // --- LÓGICA DE handleUserMessage (SIN CAMBIOS) ---
         async function handleUserMessage() {
             const pregunta = userInput.value.trim();
             if (!pregunta) return;
@@ -170,10 +161,10 @@
                         else {
                             setAvatar('si');
                             addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message');
+                            currentPage = 0; // Resetea la página en cada nueva búsqueda
                             if (plan.tabla === 'doctores') {
                                 mostrarResultadosDoctores(resultados);
                             } else {
-                                currentPage = 0; // ¡NUEVO! Resetea la página a 0 en cada nueva búsqueda
                                 mostrarResultadosPacientes(resultados);
                             }
                         }
@@ -182,16 +173,56 @@
             } catch (error) { setAvatar('no'); console.error('Error:', error); if (thinkingMessage.parentNode) chatWindow.removeChild(thinkingMessage); addMessage(`Error: ${error.message}`, 'error-message'); }
         }
 
-        // --- ¡NUEVA FUNCIÓN PARA MOSTRAR PACIENTES CON PAGINACIÓN! ---
+        // --- ¡NUEVA FUNCIÓN PARA MOSTRAR DOCTORES CON PAGINACIÓN! ---
+        function mostrarResultadosDoctores(resultados) {
+            allDoctorResults = resultados;
+            const totalResults = allDoctorResults.length;
+            const start = currentPage * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const paginatedItems = allDoctorResults.slice(start, end);
+
+            const tableRows = paginatedItems.map((doc, i) => {
+                const originalIndex = start + i;
+                return `<tr>
+                    <td>${doc.nombre || 'N/A'}</td>
+                    <td>${doc.especialidad || 'N/A'}</td>
+                    <td>${doc.rne || 'N/A'}</td>
+                    <td><button class="ver-mas-btn" onclick="showDoctorDetails(${originalIndex})">Ver Ficha</button></td>
+                </tr>`;
+            }).join('');
+
+            const paginationControls = `
+                <div class="pagination-controls">
+                    <span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span>
+                    <div>
+                        <button onclick="prevPage('doctores')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button>
+                        <button onclick="nextPage('doctores')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button>
+                    </div>
+                </div>
+            `;
+
+            const tablaHTML = `
+                <div class="results-table-container">
+                    <table class="results-table">
+                        <thead><tr><th>Nombre</th><th>Especialidad</th><th>RNE</th><th>Acción</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                    ${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}
+                </div>
+            `;
+            addMessage(tablaHTML, 'ia-message');
+        }
+
+        // --- FUNCIÓN DE PACIENTES ACTUALIZADA PARA USAR PAGINACIÓN GENÉRICA ---
         function mostrarResultadosPacientes(resultados) {
-            allPatientResults = resultados; // Guarda todos los resultados
+            allPatientResults = resultados;
             const totalResults = allPatientResults.length;
             const start = currentPage * ITEMS_PER_PAGE;
             const end = start + ITEMS_PER_PAGE;
             const paginatedItems = allPatientResults.slice(start, end);
 
             const tableRows = paginatedItems.map((p, i) => {
-                const originalIndex = start + i; // Índice real en el array completo
+                const originalIndex = start + i;
                 return `<tr>
                     <td>${p.PACIENTE || 'N/A'}</td>
                     <td>${p.FecAte ? new Date(p.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
@@ -204,8 +235,8 @@
                 <div class="pagination-controls">
                     <span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span>
                     <div>
-                        <button onclick="prevPage()" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button>
-                        <button onclick="nextPage()" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button>
+                        <button onclick="prevPage('pacientes')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button>
+                        <button onclick="nextPage('pacientes')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button>
                     </div>
                 </div>
             `;
@@ -222,29 +253,27 @@
             addMessage(tablaHTML, 'ia-message');
         }
 
-        // --- ¡NUEVAS FUNCIONES PARA PAGINACIÓN! ---
-        window.prevPage = () => {
+        // --- FUNCIONES DE PAGINACIÓN GENÉRICAS ---
+        window.prevPage = (type) => {
             if (currentPage > 0) {
                 currentPage--;
-                // Elimina el mensaje anterior de la tabla para reemplazarlo
                 const messages = chatWindow.querySelectorAll('.message');
                 const lastMessage = messages[messages.length - 1];
-                if (lastMessage.querySelector('.results-table-container')) {
-                    lastMessage.remove();
-                }
-                mostrarResultadosPacientes(allPatientResults);
+                if (lastMessage.querySelector('.results-table-container')) { lastMessage.remove(); }
+                if (type === 'doctores') { mostrarResultadosDoctores(allDoctorResults); } 
+                else { mostrarResultadosPacientes(allPatientResults); }
             }
         };
 
-        window.nextPage = () => {
-            if ((currentPage + 1) * ITEMS_PER_PAGE < allPatientResults.length) {
+        window.nextPage = (type) => {
+            const totalResults = (type === 'doctores') ? allDoctorResults.length : allPatientResults.length;
+            if ((currentPage + 1) * ITEMS_PER_PAGE < totalResults) {
                 currentPage++;
                 const messages = chatWindow.querySelectorAll('.message');
                 const lastMessage = messages[messages.length - 1];
-                if (lastMessage.querySelector('.results-table-container')) {
-                    lastMessage.remove();
-                }
-                mostrarResultadosPacientes(allPatientResults);
+                if (lastMessage.querySelector('.results-table-container')) { lastMessage.remove(); }
+                if (type === 'doctores') { mostrarResultadosDoctores(allDoctorResults); } 
+                else { mostrarResultadosPacientes(allPatientResults); }
             }
         };
 
@@ -255,7 +284,6 @@
         userInput.addEventListener('input', updateActionButton);
         userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
         function addMessage(content, type) { const messageDiv = document.createElement('div'); messageDiv.classList.add('message'); const contentDiv = document.createElement('div'); contentDiv.classList.add('message-content'); if (type === 'user-message') messageDiv.classList.add('user-message'); if (type === 'ia-message') messageDiv.classList.add('ia-message'); if (type === 'error-message') messageDiv.classList.add('error-message'); contentDiv.innerHTML = content; messageDiv.appendChild(contentDiv); chatWindow.appendChild(messageDiv); chatWindow.scrollTop = chatWindow.scrollHeight; return messageDiv; }
-        function mostrarResultadosDoctores(resultados) { allDoctorResults = resultados; const cardsHTML = resultados.map((doc, index) => `<div class="doctor-card"><h4>${doc.nombre||'Sin nombre'}</h4><p><strong>Especialidad:</strong> ${doc.especialidad||'N/A'} | <strong>RNE:</strong> ${doc.rne||'N/A'}</p><button class="ver-mas-btn" onclick="showDoctorDetails(${index})">Ver Ficha Completa</button></div>`).join(''); addMessage(cardsHTML, 'ia-message'); }
         window.showPatientDetails = (index) => { const item = allPatientResults[index]; if (!item) return; let detailsHTML = '<h3>Detalles del Paciente</h3>'; for (const key in item) { if (key !== 'id') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</p>`; } } detailsModalContent.innerHTML = detailsHTML; detailsModal.classList.add('active'); };
         window.showDoctorDetails = (index) => { const doc = allDoctorResults[index]; if (!doc) return; let detailsHTML = '<h3>Ficha del Doctor</h3>'; for (const key in doc) { if (key !== 'id' && key !== 'foto' && key !== 'firma') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${doc[key] || 'N/A'}</p>`; } } doctorModalContent.innerHTML = detailsHTML; doctorModal.classList.add('active'); };
         document.getElementById('closePatientModal').onclick = () => detailsModal.classList.remove('active');
