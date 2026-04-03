@@ -6,31 +6,188 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v7.3 (ESTABLES - SIN CAMBIOS  ) --- */
-        :root { --primary-color: #005A9C; --secondary-color: #007bff; --header-bg-color: #001f3f; --header-text-color: #ffffff; --surface-color: rgba(255, 255, 255, 0.85); --text-primary: #212529; --ia-bubble-color: #e9e9eb; --error-color: #dc3545; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
-        .app-container { position: relative; height: 100vh; width: 100%; }
-        .background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg'  ) no-repeat center center; background-size: cover; z-index: 1; }
-        .chat-panel { position: relative; z-index: 2; height: 100%; width: 100%; max-width: 800px; margin: 0 auto; background-color: var(--surface-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
-        .chat-header { display: flex; align-items: center; padding: 15px 20px; background-color: var(--header-bg-color); border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; padding-top: calc(15px + env(safe-area-inset-top, 0px)); }
-        .header-logo { width: 40px; height: 40px; margin-right: 15px; }
-        .header-info h1 { font-size: 1.2em; margin: 0; color: var(--header-text-color); }
-        .header-info p { font-size: 0.8em; margin: 0; color: var(--header-text-color); opacity: 0.8; }
-        .avatar-container { position: absolute; top: calc(20px + env(safe-area-inset-top, 0px)); right: 20px; width: 120px; height: 150px; border-radius: 15px; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.7); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; opacity: 0.9; }
-        #presenter-avatar { width: 100%; height: 100%; object-fit: cover; }
-        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; }
-        .message { display: flex; margin-bottom: 15px; max-width: 85%; margin-right: auto; }
-        .message-content { padding: 12px 18px; border-radius: 20px; line-height: 1.5; word-break: break-word; }
-        .user-message .message-content { background-color: var(--secondary-color); color: white; border-bottom-left-radius: 5px; }
-        .ia-message .message-content { background-color: var(--ia-bubble-color); color: var(--text-primary); border-bottom-left-radius: 5px; }
-        .error-message .message-content { background-color: var(--error-color); color: white; border-bottom-left-radius: 5px; }
-        #input-area { display: flex; padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); align-items: center; background-color: rgba(248, 249, 250, 0.9); flex-shrink: 0; }
-        #user-input { flex-grow: 1; padding: 15px 20px; border: 1px solid #ccc; border-radius: 30px; font-size: 16px; resize: none; outline: none; }
-        #action-button { background-color: transparent; border: none; padding: 0; margin-left: 15px; cursor: pointer; width: 80px; height: 80px; flex-shrink: 0; }
-        #action-button.recording img { animation: pulse 1.5s infinite; }
+        /* --- ESTILOS v7.7 (CORRECCIÓN PARA MÓVILES ) --- */
+        :root {
+            --primary-color: #005A9C;
+            --secondary-color: #007bff;
+            --header-bg-color: #001f3f;
+            --header-text-color: #ffffff;
+            --surface-color: rgba(255, 255, 255, 0.85);
+            --text-primary: #212529;
+            --ia-bubble-color: #e9e9eb;
+            --error-color: #dc3545;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+        .app-container {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+        }
+        .background-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center;
+            background-size: cover;
+            z-index: 1;
+        }
+        .chat-panel {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--surface-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        }
+        .chat-header {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            background-color: var(--header-bg-color);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            flex-shrink: 0;
+            /* Soporte para el 'notch' de los iPhones */
+            padding-top: calc(15px + env(safe-area-inset-top, 0px));
+        }
+        .header-logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+        }
+        .header-info h1 {
+            font-size: 1.2em;
+            margin: 0;
+            color: var(--header-text-color);
+        }
+        .header-info p {
+            font-size: 0.8em;
+            margin: 0;
+            color: var(--header-text-color);
+            opacity: 0.8;
+        }
+        
+        /* --- ¡CAMBIO CLAVE #1! --- */
+        .avatar-container {
+            position: absolute;
+            /* Ajustamos la posición para que no esté tan pegado arriba */
+            top: calc(10px + env(safe-area-inset-top, 0px));
+            right: 20px;
+            width: 120px;
+            height: 150px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            /* Aseguramos que el avatar esté por encima de todo */
+            z-index: 10;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+        }
+        #presenter-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* --- ¡CAMBIO CLAVE #2! --- */
+        #chat-window {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            /* Añadimos un relleno superior para dejar espacio al avatar */
+            padding-top: 150px;
+        }
+        
+        /* --- ¡CAMBIO CLAVE #3! --- */
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            max-width: 85%;
+            margin-right: auto;
+            position: relative; /* Necesario para el z-index */
+            z-index: 1; /* Asegura que los mensajes estén por debajo del avatar */
+        }
+        .message-content {
+            padding: 12px 18px;
+            border-radius: 20px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        .user-message {
+            margin-left: auto;
+            margin-right: 0;
+        }
+        .user-message .message-content {
+            background-color: var(--secondary-color);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .ia-message .message-content {
+            background-color: var(--ia-bubble-color);
+            color: var(--text-primary);
+            border-bottom-left-radius: 5px;
+        }
+        .error-message .message-content {
+            background-color: var(--error-color);
+            color: white;
+            border-bottom-left-radius: 5px;
+        }
+        #input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            align-items: center;
+            background-color: rgba(248, 249, 250, 0.9);
+            flex-shrink: 0;
+        }
+        #user-input {
+            flex-grow: 1;
+            padding: 15px 20px;
+            border: 1px solid #ccc;
+            border-radius: 30px;
+            font-size: 16px;
+            resize: none;
+            outline: none;
+        }
+        #action-button {
+            background-color: transparent;
+            border: none;
+            padding: 0;
+            margin-left: 15px;
+            cursor: pointer;
+            width: 50px; /* Tamaño más estándar para el botón */
+            height: 50px;
+            flex-shrink: 0;
+        }
+        #action-button.recording img {
+            animation: pulse 1.5s infinite;
+        }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
-        #action-button img { width: 100%; height: 100%; transition: transform 0.2s; }
-        #action-button:hover img { transform: scale(1.1); }
+        #action-button img {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        #action-button:hover img {
+            transform: scale(1.1);
+        }
+        
+        /* Estilos de la tabla y modales (sin cambios) */
         .results-table-container { background-color: #fff; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .results-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
         .results-table th, .results-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; text-align: left; }
@@ -44,6 +201,22 @@
         .modal.active { display: flex; }
         .modal-content { background-color: #fefefe; padding: 25px; border: 1px solid #888; width: 90%; max-width: 550px; border-radius: 10px; position: relative; }
         .close-btn { position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
+
+        /* --- ¡CAMBIO CLAVE #4! Media Query para Móviles --- */
+        @media (max-width: 480px) {
+            .avatar-container {
+                width: 80px;
+                height: 100px;
+                right: 10px;
+            }
+            #chat-window {
+                /* Reducimos el padding superior en móviles porque el avatar es más pequeño */
+                padding-top: 120px;
+            }
+            .message {
+                max-width: 95%; /* Permitimos que los mensajes ocupen un poco más de ancho */
+            }
+        }
     </style>
 </head>
 <body>
@@ -53,7 +226,7 @@
             <header class="chat-header">
                 <img src="https://www.hospitalcayetano.gob.pe/PortalWeb/assets/icon/logo-final.png" alt="Logo Hospital" class="header-logo">
                 <div class="header-info">
-                    <h1>Recepción de Emergencia Chat</h1>
+                    <h1>Recepción de Emergencia</h1>
                     <p>Asistente de Información</p>
                 </div>
             </header>
@@ -72,12 +245,11 @@
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="closePatientModal">×</span><div id="detailsModalContent"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="closeDoctorModal">×</span><div id="doctorModalContent"></div></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v7.5 (RECONOCIMIENTO DE VOZ CORREGIDO) ---
+    // --- CÓDIGO JAVASCRIPT v7.7 (SIN CAMBIOS LÓGICOS) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
-    // --- Selectores del DOM (sin cambios) ---
     const presenterAvatar = document.getElementById('presenter-avatar');
     const chatWindow = document.getElementById('chat-window');
     const userInput = document.getElementById('user-input');
@@ -88,76 +260,37 @@
     const doctorModal = document.getElementById('doctorModal');
     const doctorModalContent = document.getElementById('doctorModalContent');
     
-    // --- Variables de estado (sin cambios) ---
     let conversationHistory = [];
     let allPatientResults = [];
     let allDoctorResults = [];
     let currentPage = 0;
     const ITEMS_PER_PAGE = 10;
 
-    // --- Constantes y URLs (sin cambios) ---
     const URL_BOTON_ROJO = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_rojo.png';
     const URL_BOTON_VERDE = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_verde.png';
     const gifs = { saludo: ['01_saludo.gif'], si: ['si_02.gif', 'si_03.gif', 'si_04.gif'], no: ['no_01.gif', 'no_02.gif', 'no_03.gif'], conversacion: ['con_01.gif', 'con_02.gif', 'con_03.gif'] };
     const NEUTRO_URL = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/neutro.jpg';
     
-    // --- LÓGICA DE RECONOCIMIENTO DE VOZ (¡CORREGIDA Y RESTAURADA! ) ---
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     let isRecording = false;
 
-    if (SpeechRecognition) {
+    if (SpeechRecognition ) {
         recognition = new SpeechRecognition();
         recognition.lang = 'es-ES';
         recognition.continuous = false;
         recognition.interimResults = false;
+        recognition.onstart = () => { isRecording = true; actionButton.classList.add('recording'); userInput.placeholder = 'Escuchando...'; };
+        recognition.onend = () => { isRecording = false; actionButton.classList.remove('recording'); userInput.placeholder = 'Escribe o presiona el micrófono...'; };
+        recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; userInput.value = transcript; updateActionButton(); handleUserMessage(); };
+        recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz:', event.error); addMessage(`Error de micrófono: ${event.error}`, 'error-message'); };
+    } else { console.warn("El reconocimiento de voz no es compatible con este navegador."); }
 
-        recognition.onstart = () => {
-            isRecording = true;
-            actionButton.classList.add('recording');
-            userInput.placeholder = 'Escuchando...';
-        };
-
-        recognition.onend = () => {
-            isRecording = false;
-            actionButton.classList.remove('recording');
-            userInput.placeholder = 'Escribe o presiona el micrófono...';
-        };
-
-        recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            userInput.value = transcript;
-            updateActionButton();
-            handleUserMessage(); // Envía el mensaje automáticamente
-        };
-
-        recognition.onerror = (event) => {
-            console.error('Error en el reconocimiento de voz:', event.error);
-            addMessage(`Error de micrófono: ${event.error}`, 'error-message');
-        };
-    } else {
-        console.warn("El reconocimiento de voz no es compatible con este navegador.");
-    }
-
-    function toggleRecording() {
-        if (!SpeechRecognition) {
-            addMessage("Lo siento, tu navegador no soporta el reconocimiento de voz.", 'error-message');
-            return;
-        }
-        if (isRecording) {
-            recognition.stop();
-        } else {
-            recognition.start();
-        }
-    }
-
-    // --- Resto de funciones (sin cambios, pero verificadas) ---
+    function toggleRecording() { if (!SpeechRecognition) { addMessage("Lo siento, tu navegador no soporta el reconocimiento de voz.", 'error-message'); return; } if (isRecording) { recognition.stop(); } else { try { recognition.start(); } catch(e) { console.error("Error al iniciar grabación:", e); addMessage("El micrófono ya está en uso o hubo un error.", "error-message"); } } }
     function setAvatar(tipo) { const gifList = gifs[tipo] || gifs.conversacion; const randomGif = gifList[Math.floor(Math.random() * gifList.length)]; const baseUrl = `https://raw.githubusercontent.com/Dafon1981/prueba2/main/${randomGif}`; presenterAvatar.src = `${baseUrl}?t=${new Date( ).getTime()}`; setTimeout(() => { presenterAvatar.src = NEUTRO_URL; }, 2500); }
     function updateActionButton() { actionButtonIcon.src = (userInput.value.trim() === '') ? URL_BOTON_ROJO : URL_BOTON_VERDE; actionButton.title = (userInput.value.trim() === '') ? "Grabar voz" : "Enviar mensaje"; }
 
     document.addEventListener('DOMContentLoaded', () => { presenterAvatar.src = NEUTRO_URL; setAvatar('saludo'); addMessage("Soy asistente de recepcion de emergencia ¿En qué puedo ayudarte hoy?", 'ia-message'); userInput.focus(); updateActionButton(); });
-
-    function predecirUbicacionFUA(fechaRegistro) { if (!fechaRegistro) return "No se pudo determinar la fecha del registro."; const fechaReg = new Date(fechaRegistro); const hoy = new Date(); const diffTime = Math.abs(hoy - fechaReg); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); if (diffDays <= 7) return "Probablemente en **Recepción (Cajas)** o **Asignación**."; else if (diffDays <= 21) return "Posiblemente en **Auditoría**, **Digitación** o **Archivos de digitación**."; else return "Muy probable que ya se encuentre en **Archivo Central**."; }
 
     async function handleUserMessage() {
         const pregunta = userInput.value.trim();
@@ -171,42 +304,30 @@
         try {
             const { data: iaResponse, error: functionError } = await supabase.functions.invoke('chat-con-ia', { body: { pregunta: pregunta, historial: conversationHistory.slice(-6) } });
             if (functionError) throw functionError;
-            chatWindow.removeChild(thinkingMessage);
+            if (thinkingMessage.parentNode) chatWindow.removeChild(thinkingMessage);
 
             if (iaResponse.tipo === 'charla') {
                 setAvatar('conversacion');
                 addMessage(iaResponse.respuesta, 'ia-message');
                 conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
             } 
-            else if (iaResponse.tipo === 'prediccion_fua') {
-                const { data: resultados, error: dbError } = await supabase.from('registros').select('PACIENTE, FechaRegistro').ilike(iaResponse.plan.filtros[0].columna, iaResponse.plan.filtros[0].valor);
-                if (dbError) throw dbError;
-                if (!resultados || resultados.length === 0) { setAvatar('no'); addMessage('No encontré la FUA que mencionas.', 'ia-message'); }
-                else {
-                    setAvatar('si');
-                    const registro = resultados[0];
-                    const prediccion = predecirUbicacionFUA(registro.FechaRegistro);
-                    addMessage(`Para el paciente <strong>${registro.PACIENTE}</strong>, mi predicción es: ${prediccion}`, 'ia-message');
-                }
-            }
             else if (iaResponse.tipo === 'consulta_db') {
                 const plan = iaResponse.plan;
                 let query;
-                if (plan.accion === 'count') {
-                    query = supabase.from(plan.tabla).select('*', { count: 'exact', head: true });
-                } else {
-                    query = supabase.from(plan.tabla).select(plan.columnas || '*');
-                }
+                if (plan.accion === 'count') { query = supabase.from(plan.tabla).select('*', { count: 'exact', head: true }); } 
+                else { query = supabase.from(plan.tabla).select(plan.columnas || '*'); }
+                
                 if (plan.filtros && plan.filtros.length > 0) {
                     plan.filtros.forEach(filtro => {
                         if (filtro.operador === 'eq') { query = query.eq(filtro.columna, filtro.valor); } 
                         else if (filtro.operador === 'gte') { query = query.gte(filtro.columna, filtro.valor); } 
                         else if (filtro.operador === 'lte') { query = query.lte(filtro.columna, filtro.valor); } 
-                        else { query = query.ilike(filtro.columna, filtro.valor); }
+                        else { query = query.ilike(filtro.columna, `%${filtro.valor}%`); }
                     });
                 }
                 const { data: resultados, error: dbError, count } = await query;
                 if (dbError) throw dbError;
+
                 if (plan.accion === 'count') {
                     setAvatar('si');
                     addMessage(`Se encontraron <strong>${count}</strong> registros que coinciden.`, 'ia-message');
@@ -216,56 +337,23 @@
                         setAvatar('si');
                         addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message');
                         currentPage = 0;
-                        if (plan.tabla === 'doctores') {
-                            mostrarResultadosDoctores(resultados);
-                        } else {
-                            mostrarResultadosPacientes(resultados);
-                        }
+                        if (plan.tabla === 'doctores') { mostrarResultadosDoctores(resultados); } 
+                        else { mostrarResultadosPacientes(resultados); }
                     }
                 }
             } else { throw new Error("Respuesta inesperada de la IA."); }
-        } catch (error) { setAvatar('no'); console.error('Error:', error); if (thinkingMessage.parentNode) chatWindow.removeChild(thinkingMessage); addMessage(`Error: ${error.message}`, 'error-message'); }
+        } catch (error) { if (thinkingMessage.parentNode) chatWindow.removeChild(thinkingMessage); setAvatar('no'); console.error('Error:', error); addMessage(`Error: ${error.message}`, 'error-message'); }
     }
 
-    function mostrarResultadosDoctores(resultados) {
-        allDoctorResults = resultados;
-        const totalResults = allDoctorResults.length;
-        const start = currentPage * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const paginatedItems = allDoctorResults.slice(start, end);
-        const tableRows = paginatedItems.map((doc, i) => { const originalIndex = start + i; return `<tr><td>${doc.nombre || 'N/A'}</td><td>${doc.especialidad || 'N/A'}</td><td>${doc.rne || 'N/A'}</td><td><button class="ver-mas-btn" onclick="showDoctorDetails(${originalIndex})">Ver Ficha</button></td></tr>`; }).join('');
-        const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('doctores')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('doctores')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`;
-        const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Nombre</th><th>Especialidad</th><th>RNE</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`;
-        addMessage(tablaHTML, 'ia-message');
-    }
-
-    function mostrarResultadosPacientes(resultados) {
-        allPatientResults = resultados;
-        const totalResults = allPatientResults.length;
-        const start = currentPage * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const paginatedItems = allPatientResults.slice(start, end);
-        const tableRows = paginatedItems.map((p, i) => { const originalIndex = start + i; return `<tr><td>${p.PACIENTE || 'N/A'}</td><td>${p.FecAte ? new Date(p.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td><td>S/ ${p.CostoTotal || '0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${originalIndex})">Ver más</button></td></tr>`; }).join('');
-        const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('pacientes')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('pacientes')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`;
-        const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Paciente</th><th>Fecha</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`;
-        addMessage(tablaHTML, 'ia-message');
-    }
-
+    function mostrarResultadosDoctores(resultados) { allDoctorResults = resultados; const totalResults = allDoctorResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allDoctorResults.slice(start, end); const tableRows = paginatedItems.map((doc, i) => { const originalIndex = start + i; return `<tr><td>${doc.nombre || 'N/A'}</td><td>${doc.especialidad || 'N/A'}</td><td>${doc.rne || 'N/A'}</td><td><button class="ver-mas-btn" onclick="showDoctorDetails(${originalIndex})">Ver Ficha</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('doctores')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('doctores')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Nombre</th><th>Especialidad</th><th>RNE</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
+    function mostrarResultadosPacientes(resultados) { allPatientResults = resultados; const totalResults = allPatientResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allPatientResults.slice(start, end); const tableRows = paginatedItems.map((p, i) => { const originalIndex = start + i; return `<tr><td>${p.PACIENTE || 'N/A'}</td><td>${p.FecAte ? new Date(p.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td><td>S/ ${p.CostoTotal || '0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${originalIndex})">Ver más</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('pacientes')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('pacientes')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Paciente</th><th>Fecha</th><th>Costo</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
     window.prevPage = (type) => { if (currentPage > 0) { currentPage--; const messages = chatWindow.querySelectorAll('.message'); const lastMessage = messages[messages.length - 1]; if (lastMessage.querySelector('.results-table-container')) { lastMessage.remove(); } if (type === 'doctores') { mostrarResultadosDoctores(allDoctorResults); } else { mostrarResultadosPacientes(allPatientResults); } } };
     window.nextPage = (type) => { const totalResults = (type === 'doctores') ? allDoctorResults.length : allPatientResults.length; if ((currentPage + 1) * ITEMS_PER_PAGE < totalResults) { currentPage++; const messages = chatWindow.querySelectorAll('.message'); const lastMessage = messages[messages.length - 1]; if (lastMessage.querySelector('.results-table-container')) { lastMessage.remove(); } if (type === 'doctores') { mostrarResultadosDoctores(allDoctorResults); } else { mostrarResultadosPacientes(allPatientResults); } } };
-
-    // --- EVENT LISTENERS (¡CONEXIÓN CORREGIDA!) ---
-    actionButton.addEventListener('click', () => {
-        if (userInput.value.trim() !== '') {
-            handleUserMessage();
-        } else {
-            toggleRecording(); // ¡Ahora sí llama a la función de grabación!
-        }
-    });
+    
+    actionButton.addEventListener('click', () => { if (userInput.value.trim() !== '') { handleUserMessage(); } else { toggleRecording(); } });
     userInput.addEventListener('input', updateActionButton);
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
     
-    // --- Funciones de UI (sin cambios) ---
     function addMessage(content, type) { const messageDiv = document.createElement('div'); messageDiv.classList.add('message'); const contentDiv = document.createElement('div'); contentDiv.classList.add('message-content'); if (type === 'user-message') messageDiv.classList.add('user-message'); if (type === 'ia-message') messageDiv.classList.add('ia-message'); if (type === 'error-message') messageDiv.classList.add('error-message'); contentDiv.innerHTML = content; messageDiv.appendChild(contentDiv); chatWindow.appendChild(messageDiv); chatWindow.scrollTop = chatWindow.scrollHeight; return messageDiv; }
     window.showPatientDetails = (index) => { const item = allPatientResults[index]; if (!item) return; let detailsHTML = '<h3>Detalles del Paciente</h3>'; for (const key in item) { if (key !== 'id') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</p>`; } } detailsModalContent.innerHTML = detailsHTML; detailsModal.classList.add('active'); };
     window.showDoctorDetails = (index) => { const doc = allDoctorResults[index]; if (!doc) return; let detailsHTML = '<h3>Ficha del Doctor</h3>'; for (const key in doc) { if (key !== 'id' && key !== 'foto' && key !== 'firma') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${doc[key] || 'N/A'}</p>`; } } doctorModalContent.innerHTML = detailsHTML; doctorModal.classList.add('active'); };
