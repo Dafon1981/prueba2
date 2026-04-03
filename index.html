@@ -6,9 +6,60 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v8.1 (TABLA RESPONSIVE CORREGIDA ) --- */
-        :root { --primary-color: #005A9C; --secondary-color: #007bff; --header-bg-color: #001f3f; --header-text-color: #ffffff; --surface-color: rgba(255, 255, 255, 0.85); --text-primary: #212529; --ia-bubble-color: #e9e9eb; --error-color: #dc3545; }
+        /* --- ESTILOS v8.2 (BIENVENIDA FLOTANTE Y AJUSTE FINAL ) --- */
+        :root {
+            --primary-color: #005A9C;
+            --secondary-color: #007bff;
+            --header-bg-color: #001f3f;
+            --header-text-color: #ffffff;
+            --surface-color: rgba(255, 255, 255, 0.85);
+            --text-primary: #212529;
+            --ia-bubble-color: #e9e9eb;
+            --error-color: #dc3545;
+            --dorado-color: #d4af37; /* Color dorado para el borde */
+        }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
+        
+        /* --- ¡NUEVO! ESTILOS PARA EL MENSAJE DE BIENVENIDA --- */
+        #welcome-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 2000; /* Por encima de todo */
+            opacity: 0; /* Empieza invisible */
+            animation: fadeIn 0.5s ease-out forwards, fadeOut 0.5s ease-in 5.5s forwards;
+        }
+        #welcome-overlay .welcome-box {
+            padding: 30px 40px;
+            border: 3px solid var(--dorado-color);
+            border-radius: 15px;
+            background-color: rgba(0, 31, 63, 0.9);
+            max-width: 90%;
+        }
+        #welcome-overlay h2 {
+            color: var(--primary-color);
+            font-size: 2em;
+            margin: 0 0 15px 0;
+            font-weight: bold;
+            color: #5dade2; /* Azul claro */
+        }
+        #welcome-overlay p {
+            font-size: 1.1em;
+            margin: 0;
+            opacity: 0.9;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        /* --- FIN DE NUEVOS ESTILOS --- */
+
         .app-container { position: relative; height: 100vh; width: 100%; }
         .background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg'  ) no-repeat center center; background-size: cover; z-index: 1; }
         .chat-panel { position: relative; z-index: 2; height: 100%; width: 100%; max-width: 800px; margin: 0 auto; background-color: var(--surface-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
@@ -16,9 +67,15 @@
         .header-logo { width: 40px; height: 40px; margin-right: 15px; }
         .header-info h1 { font-size: 1.2em; margin: 0; color: var(--header-text-color); }
         .header-info p { font-size: 0.8em; margin: 0; color: var(--header-text-color); opacity: 0.8; }
-        .avatar-container { position: absolute; top: calc(55px + env(safe-area-inset-top, 0px)); right: 20px; width: 120px; height: 150px; border-radius: 15px; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.7); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; opacity: 0.9; }
+        
+        /* --- ¡CAMBIO #1! --- Bajamos el avatar definitivamente */
+        .avatar-container { position: absolute; top: calc(75px + env(safe-area-inset-top, 0px)); right: 20px; width: 120px; height: 150px; border-radius: 15px; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.7); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; opacity: 0.9; }
+        
         #presenter-avatar { width: 100%; height: 100%; object-fit: cover; }
-        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; padding-top: 155px; }
+        
+        /* --- ¡CAMBIO #2! --- Ajustamos el padding para compensar la bajada del avatar */
+        #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; padding-top: 175px; }
+        
         .message { display: flex; margin-bottom: 15px; max-width: 85%; margin-right: auto; }
         .message.ia-message:first-of-type { margin-top: 10px; }
         .message-content { padding: 12px 18px; border-radius: 20px; line-height: 1.5; word-break: break-word; }
@@ -33,12 +90,9 @@
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
         #action-button img { width: 100%; height: 100%; transition: transform 0.2s; }
         #action-button:hover img { transform: scale(1.1); }
-        
-        /* --- ¡CAMBIO #1! --- Añadimos overflow para evitar que la tabla rompa el layout */
         .results-table-container { background-color: #fff; padding: 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); overflow-x: auto; }
-        
         .results-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        .results-table th, .results-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; text-align: left; white-space: nowrap; /* Evita que el texto se parta en varias líneas */ }
+        .results-table th, .results-table td { padding: 10px 12px; border-bottom: 1px solid #e9ecef; text-align: left; white-space: nowrap; }
         .results-table th { font-weight: 600; background-color: #f8f9fa; }
         .results-table tr:last-child td { border-bottom: none; }
         .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; font-size: 0.9em; color: #6c757d; }
@@ -49,16 +103,18 @@
         .modal.active { display: flex; }
         .modal-content { background-color: #fefefe; padding: 25px; border: 1px solid #888; width: 90%; max-width: 550px; border-radius: 10px; position: relative; }
         .close-btn { position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
-
-        /* --- ¡CAMBIO #2! --- Nueva clase para ocultar elementos en pantallas pequeñas */
-        @media (max-width: 600px) {
-            .hide-on-mobile {
-                display: none;
-            }
-        }
+        @media (max-width: 600px) { .hide-on-mobile { display: none; } }
     </style>
 </head>
 <body>
+    <!-- ¡NUEVO! Mensaje de bienvenida flotante -->
+    <div id="welcome-overlay">
+        <div class="welcome-box">
+            <h2>Bienvenido a Recepción de Emergencia</h2>
+            <p>Haga sus preguntas sobre FUAs, doctores y más...</p>
+        </div>
+    </div>
+
     <div class="app-container">
         <div class="background-image"></div>
         <div class="chat-panel">
@@ -84,7 +140,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="closePatientModal">×</span><div id="detailsModalContent"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="closeDoctorModal">×</span><div id="doctorModalContent"></div></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v8.1 (TABLA DE PACIENTES MODIFICADA) ---
+    // --- CÓDIGO JAVASCRIPT v8.2 (LÓGICA DE BIENVENIDA MODIFICADA) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -124,7 +180,27 @@
     function toggleRecording() { if (!SpeechRecognition) { addMessage("Lo siento, tu navegador no soporta el reconocimiento de voz.", 'error-message'); return; } if (isRecording) { recognition.stop(); } else { try { recognition.start(); } catch(e) { console.error("Error al iniciar grabación:", e); addMessage("El micrófono ya está en uso o hubo un error.", "error-message"); } } }
     function setAvatar(tipo) { const gifList = gifs[tipo] || gifs.conversacion; const randomGif = gifList[Math.floor(Math.random() * gifList.length)]; const baseUrl = `https://raw.githubusercontent.com/Dafon1981/prueba2/main/${randomGif}`; presenterAvatar.src = `${baseUrl}?t=${new Date( ).getTime()}`; setTimeout(() => { presenterAvatar.src = NEUTRO_URL; }, 2500); }
     function updateActionButton() { actionButtonIcon.src = (userInput.value.trim() === '') ? URL_BOTON_ROJO : URL_BOTON_VERDE; actionButton.title = (userInput.value.trim() === '') ? "Grabar voz" : "Enviar mensaje"; }
-    document.addEventListener('DOMContentLoaded', () => { presenterAvatar.src = NEUTRO_URL; setAvatar('saludo'); addMessage("Soy asistente de recepcion de emergencia ¿En qué puedo ayudarte hoy?", 'ia-message'); userInput.focus(); updateActionButton(); });
+
+    // --- ¡CAMBIO #3! --- Lógica de inicio modificada
+    document.addEventListener('DOMContentLoaded', () => {
+        presenterAvatar.src = NEUTRO_URL;
+        // Ya no se muestra el gif de saludo al inicio, para no distraer del mensaje
+        
+        // Ya NO añadimos el mensaje de chat inicial
+        // addMessage("Soy asistente de recepcion de emergencia ¿En qué puedo ayudarte hoy?", 'ia-message');
+        
+        userInput.focus();
+        updateActionButton();
+
+        // Ocultamos completamente el overlay después de que termine su animación de salida
+        setTimeout(() => {
+            const welcomeOverlay = document.getElementById('welcome-overlay');
+            if (welcomeOverlay) {
+                welcomeOverlay.style.display = 'none';
+            }
+        }, 6000); // 6 segundos en total
+    });
+
     async function handleUserMessage() {
         const pregunta = userInput.value.trim();
         if (!pregunta) return;
@@ -173,58 +249,8 @@
             } else { throw new Error("Respuesta inesperada de la IA."); }
         } catch (error) { if (thinkingMessage.parentNode) chatWindow.removeChild(thinkingMessage); setAvatar('no'); console.error('Error:', error); addMessage(`Error: ${error.message}`, 'error-message'); }
     }
-    function mostrarResultadosDoctores(resultados) { allDoctorResults = resultados; const totalResults = allDoctorResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allDoctorResults.slice(start, end); const tableRows = paginatedItems.map((doc, i) => { const originalIndex = start + i; return `<tr><td>${doc.nombre || 'N/A'}</td><td>${doc.especialidad || 'N/A'}</td><td>${doc.rne || 'N/A'}</td><td><button class="ver-mas-btn" onclick="showDoctorDetails(${originalIndex})">Ver Ficha</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('doctores')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('doctores')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Nombre</th><th>Especialidad</th><th>RNE</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
-    
-    // --- ¡FUNCIÓN MODIFICADA! ---
-    function mostrarResultadosPacientes(resultados) {
-        allPatientResults = resultados;
-        const totalResults = allPatientResults.length;
-        const start = currentPage * ITEMS_PER_PAGE;
-        const end = start + ITEMS_PER_PAGE;
-        const paginatedItems = allPatientResults.slice(start, end);
-
-        const tableRows = paginatedItems.map((p, i) => {
-            const originalIndex = start + i;
-            // Añadimos la clase 'hide-on-mobile' a la celda del costo
-            return `<tr>
-                <td>${p.PACIENTE || 'N/A'}</td>
-                <td>${p.FecAte ? new Date(p.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td>
-                <td class="hide-on-mobile">S/ ${p.CostoTotal || '0.00'}</td>
-                <td><button class="ver-mas-btn" onclick="showPatientDetails(${originalIndex})">Ver más</button></td>
-            </tr>`;
-        }).join('');
-
-        const paginationControls = `
-            <div class="pagination-controls">
-                <span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span>
-                <div>
-                    <button onclick="prevPage('pacientes')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button>
-                    <button onclick="nextPage('pacientes')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button>
-                </div>
-            </div>
-        `;
-
-        // Añadimos la clase 'hide-on-mobile' a la cabecera de la columna de costo
-        const tablaHTML = `
-            <div class="results-table-container">
-                <table class="results-table">
-                    <thead>
-                        <tr>
-                            <th>Paciente</th>
-                            <th>Fecha</th>
-                            <th class="hide-on-mobile">Costo</th>
-                            <th>Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>${tableRows}</tbody>
-                </table>
-                ${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}
-            </div>
-        `;
-        addMessage(tablaHTML, 'ia-message');
-    }
-
-    // Funciones de paginación y UI (sin cambios)
+    function mostrarResultadosDoctores(resultados) { allDoctorResults = resultados; const totalResults = allDoctorResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allDoctorResults.slice(start, end); const tableRows = paginatedItems.map((doc, i) => { const originalIndex = start + i; return `<tr><td>${doc.nombre || 'N/A'}</td><td>${doc.especialidad || 'N/A'}</td><td class="hide-on-mobile">${doc.rne || 'N/A'}</td><td><button class="ver-mas-btn" onclick="showDoctorDetails(${originalIndex})">Ver Ficha</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('doctores')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('doctores')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Nombre</th><th>Especialidad</th><th class="hide-on-mobile">RNE</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
+    function mostrarResultadosPacientes(resultados) { allPatientResults = resultados; const totalResults = allPatientResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allPatientResults.slice(start, end); const tableRows = paginatedItems.map((p, i) => { const originalIndex = start + i; return `<tr><td>${p.PACIENTE || 'N/A'}</td><td>${p.FecAte ? new Date(p.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td><td class="hide-on-mobile">S/ ${p.CostoTotal || '0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${originalIndex})">Ver más</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('pacientes')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('pacientes')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Paciente</th><th>Fecha</th><th class="hide-on-mobile">Costo</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
     window.prevPage = (type) => { if (currentPage > 0) { currentPage--; const messages = chatWindow.querySelectorAll('.message'); const lastMessage = messages[messages.length - 1]; if (lastMessage.querySelector('.results-table-container')) { lastMessage.remove(); } if (type === 'doctores') { mostrarResultadosDoctores(allDoctorResults); } else { mostrarResultadosPacientes(allPatientResults); } } };
     window.nextPage = (type) => { const totalResults = (type === 'doctores') ? allDoctorResults.length : allPatientResults.length; if ((currentPage + 1) * ITEMS_PER_PAGE < totalResults) { currentPage++; const messages = chatWindow.querySelectorAll('.message'); const lastMessage = messages[messages.length - 1]; if (lastMessage.querySelector('.results-table-container')) { lastMessage.remove(); } if (type === 'doctores') { mostrarResultadosDoctores(allDoctorResults); } else { mostrarResultadosPacientes(allPatientResults); } } };
     actionButton.addEventListener('click', () => { if (userInput.value.trim() !== '') { handleUserMessage(); } else { toggleRecording(); } });
