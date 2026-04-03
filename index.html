@@ -6,39 +6,39 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v7.8 (AJUSTE FINO Y PRECISO ) --- */
+        /* --- ESTILOS v7.9 (AJUSTE FINAL DEL INPUT ) --- */
         :root { --primary-color: #005A9C; --secondary-color: #007bff; --header-bg-color: #001f3f; --header-text-color: #ffffff; --surface-color: rgba(255, 255, 255, 0.85); --text-primary: #212529; --ia-bubble-color: #e9e9eb; --error-color: #dc3545; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
         .app-container { position: relative; height: 100vh; width: 100%; }
         .background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg'  ) no-repeat center center; background-size: cover; z-index: 1; }
         .chat-panel { position: relative; z-index: 2; height: 100%; width: 100%; max-width: 800px; margin: 0 auto; background-color: var(--surface-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
-        
-        /* --- ¡CAMBIO #1! --- Bajamos un poco el título */
         .chat-header { display: flex; align-items: center; padding: 15px 20px; background-color: var(--header-bg-color); border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; padding-top: calc(25px + env(safe-area-inset-top, 0px)); }
-        
         .header-logo { width: 40px; height: 40px; margin-right: 15px; }
         .header-info h1 { font-size: 1.2em; margin: 0; color: var(--header-text-color); }
         .header-info p { font-size: 0.8em; margin: 0; color: var(--header-text-color); opacity: 0.8; }
-        
-        /* --- ¡CAMBIO #2! --- Bajamos un poco el avatar para que coincida */
         .avatar-container { position: absolute; top: calc(30px + env(safe-area-inset-top, 0px)); right: 20px; width: 120px; height: 150px; border-radius: 15px; overflow: hidden; border: 3px solid rgba(255, 255, 255, 0.7); box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; opacity: 0.9; }
-        
         #presenter-avatar { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* --- ¡CAMBIO #3! --- Creamos el espacio para el avatar */
         #chat-window { flex-grow: 1; overflow-y: auto; padding: 20px; padding-top: 155px; }
-        
         .message { display: flex; margin-bottom: 15px; max-width: 85%; margin-right: auto; }
-        
-        /* --- ¡CAMBIO #4! --- Damos un pequeño margen extra solo al primer mensaje */
         .message.ia-message:first-of-type { margin-top: 10px; }
-
         .message-content { padding: 12px 18px; border-radius: 20px; line-height: 1.5; word-break: break-word; }
         .user-message { margin-left: auto; margin-right: 0; }
         .user-message .message-content { background-color: var(--secondary-color); color: white; border-bottom-right-radius: 5px; }
         .ia-message .message-content { background-color: var(--ia-bubble-color); color: var(--text-primary); border-bottom-left-radius: 5px; }
         .error-message .message-content { background-color: var(--error-color); color: white; border-bottom-left-radius: 5px; }
-        #input-area { display: flex; padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); align-items: center; background-color: rgba(248, 249, 250, 0.9); flex-shrink: 0; }
+        
+        /* --- ¡ÚNICO CAMBIO! --- Añadimos espacio inferior para subir el área de texto */
+        #input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            align-items: center;
+            background-color: rgba(248, 249, 250, 0.9);
+            flex-shrink: 0;
+            /* Esta línea añade espacio extra en la parte inferior, subiendo visualmente el contenido */
+            padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
+        }
+
         #user-input { flex-grow: 1; padding: 15px 20px; border: 1px solid #ccc; border-radius: 30px; font-size: 16px; resize: none; outline: none; }
         #action-button { background-color: transparent; border: none; padding: 0; margin-left: 15px; cursor: pointer; width: 80px; height: 80px; flex-shrink: 0; }
         #action-button.recording img { animation: pulse 1.5s infinite; }
@@ -86,7 +86,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="closePatientModal">×</span><div id="detailsModalContent"></div></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="closeDoctorModal">×</span><div id="doctorModalContent"></div></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v7.8 (SIN CAMBIOS LÓGICOS) ---
+    // --- CÓDIGO JAVASCRIPT v7.9 (SIN CAMBIOS LÓGICOS) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
