@@ -6,7 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v9.0 (SIN CAMBIOS ) --- */
+        /* --- ESTILOS v9.3 (SIN CAMBIOS ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -90,7 +90,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v9.0 (INFO REGISTRADOR ESTRUCTURADA) ---
+    // --- CÓDIGO JAVASCRIPT v9.3 (LÓGICA DE PREDICCIÓN DUAL) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -244,21 +244,35 @@
         return messageDiv;
     }
 
-    function predecirUbicacionFUA(fechaRegistro) {
-        if (!fechaRegistro) return "No se puede predecir la ubicación sin una fecha de registro.";
-        const fechaReg = new Date(fechaRegistro + 'T00:00:00');
+    function predecirUbicacionFUA(fechaAtencion, fechaRegistro) {
         const hoy = new Date();
-        fechaReg.setHours(0, 0, 0, 0);
         hoy.setHours(0, 0, 0, 0);
-        const diffTime = hoy - fechaReg;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays < 0) return "La fecha de registro es en el futuro. No se puede predecir.";
-        if (diffDays <= 5) return "Probablemente en <strong>Módulo 9</strong> o <strong>Cuentas Corrientes</strong>.";
-        if (diffDays <= 14) return "Probablemente en <strong>Recepción de Emergencia</strong> (almacén de cajas, en revisión de firmas y fichas).";
-        if (diffDays <= 18) return "Probablemente en <strong>Asignación</strong>.";
-        if (diffDays <= 25) return "Probablemente en <strong>Digitación</strong> o <strong>Auditoría</strong>.";
-        if (diffDays <= 29) return "Probablemente en <strong>Archivo de Digitación</strong>.";
-        return "Es muy probable que ya se encuentre en <strong>Archivo Central</strong> (camino final).";
+
+        if (fechaRegistro) {
+            const fechaReg = new Date(fechaRegistro + 'T00:00:00');
+            fechaReg.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((hoy - fechaReg) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return "La fecha de registro es en el futuro. No se puede predecir.";
+            if (diffDays <= 0) return "Probablemente en <strong>Asignación</strong> (recién registrado hoy).";
+            if (diffDays <= 5) return "Probablemente en <strong>Digitación</strong> o <strong>Auditoría</strong>.";
+            if (diffDays <= 9) return "Probablemente en <strong>Archivo de Digitación</strong>.";
+            return "Es muy probable que ya se encuentre en <strong>Archivo Central</strong> (camino final).";
+        }
+        else if (fechaAtencion) {
+            const fechaAte = new Date(fechaAtencion + 'T00:00:00');
+            fechaAte.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((hoy - fechaAte) / (1000 * 60 * 60 * 24));
+
+            if (diffDays < 0) return "La fecha de atención es en el futuro. No se puede predecir.";
+            if (diffDays <= 3) return "Probablemente en <strong>Módulo 9</strong>.";
+            if (diffDays <= 5) return "Probablemente en <strong>Cuentas Corrientes</strong>.";
+            if (diffDays <= 19) return "Probablemente en <strong>Recepción de Emergencia</strong> (almacén, pendiente de registro).";
+            return "La FUA tiene un <strong>retraso significativo en el registro</strong>. Se recomienda verificar directamente en Recepción de Emergencia.";
+        }
+        else {
+            return "No hay suficientes fechas para realizar una predicción de ubicación.";
+        }
     }
 
     window.showPatientDetails = (index) => {
@@ -286,7 +300,7 @@
             detailsGridHTML += `<div class="modal-details-item"><strong>${campo.label}:</strong></div><div class="modal-details-item"><span>${valor}</span></div>`;
         });
         const prediccionHTML = `<div class="modal-prediction-item"><strong>Ubicación Probable:</strong>  
-${predecirUbicacionFUA(item.FechaRegistro)}</div>`;
+${predecirUbicacionFUA(item.FecAte, item.FechaRegistro)}</div>`;
         detailsGridHTML += prediccionHTML;
         detailsGridHTML += '</div>';
         detailsModalContent.innerHTML = `
