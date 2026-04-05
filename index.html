@@ -6,13 +6,13 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v8.7 (SIN CAMBIOS ) --- */
+        /* --- ESTILOS v8.9 --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
             --header-bg-color: #001f3f;
             --header-text-color: #ffffff;
-            --surface-color: rgba(255, 255, 255, 0.85);
+            --surface-color: rgba(255, 255, 255, 0.85 );
             --text-primary: #212529;
             --ia-bubble-color: #e9e9eb;
             --error-color: #dc3545;
@@ -69,6 +69,9 @@
         .modal-details-grid { display: grid; grid-template-columns: 150px 1fr; gap: 10px 20px; margin-bottom: 25px; }
         .modal-details-item strong { font-weight: 600; color: var(--primary-color); }
         .modal-details-item span { word-break: break-all; }
+        /* ¡NUEVO ESTILO PARA LA PREDICCIÓN! */
+        .modal-prediction-item { grid-column: 1 / -1; margin-top: 15px; padding: 15px; background-color: #eef7ff; border-left: 5px solid var(--secondary-color); border-radius: 4px; }
+        .modal-prediction-item strong { color: var(--primary-color); }
         .modal-close-btn { display: block; width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 20px; }
     </style>
 </head>
@@ -87,7 +90,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v8.8 (ENLACES AUTOMÁTICOS) ---
+    // --- CÓDIGO JAVASCRIPT v8.9 (PREDICCIÓN DE UBICACIÓN) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -205,21 +208,16 @@
         }
     }
 
-    // --- ¡FUNCIÓN MODIFICADA PARA CREAR ENLACES! ---
     function addMessage(content, type) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message');
         const contentDiv = document.createElement('div');
         contentDiv.classList.add('message-content');
-
         if (type === 'user-message') messageDiv.classList.add('user-message');
         if (type === 'ia-message') messageDiv.classList.add('ia-message');
         if (type === 'error-message') messageDiv.classList.add('error-message');
-
-        // Expresión regular para detectar URLs
         const urlRegex = /(https?:\/\/[^\s]+ )/g;
         const processedContent = content.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-        
         contentDiv.innerHTML = processedContent;
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
@@ -227,7 +225,69 @@
         return messageDiv;
     }
 
-    // El resto de las funciones no necesitan cambios
+    function predecirUbicacionFUA(fechaRegistro) {
+        if (!fechaRegistro) return "No se puede predecir la ubicación sin una fecha de registro.";
+        
+        const fechaReg = new Date(fechaRegistro + 'T00:00:00');
+        const hoy = new Date();
+        fechaReg.setHours(0, 0, 0, 0);
+        hoy.setHours(0, 0, 0, 0);
+
+        const diffTime = hoy - fechaReg;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays < 0) return "La fecha de registro es en el futuro. No se puede predecir.";
+        if (diffDays <= 5) return "Probablemente en <strong>Módulo 9</strong> o <strong>Cuentas Corrientes</strong>.";
+        if (diffDays <= 14) return "Probablemente en <strong>Recepción de Emergencia</strong> (almacén de cajas, en revisión de firmas y fichas).";
+        if (diffDays <= 18) return "Probablemente en <strong>Asignación</strong>.";
+        if (diffDays <= 25) return "Probablemente en <strong>Digitación</strong> o <strong>Auditoría</strong>.";
+        if (diffDays <= 29) return "Probablemente en <strong>Archivo de Digitación</strong>.";
+        
+        return "Es muy probable que ya se encuentre en <strong>Archivo Central</strong> (camino final).";
+    }
+
+    window.showPatientDetails = (index) => {
+        const item = allPatientResults[index];
+        if (!item) return;
+
+        const camposAMostrar = [
+            { key: 'Episodio', label: 'Nro. Episodio' },
+            { key: 'NFUA', label: 'Nro. FUA' },
+            { key: 'PACIENTE', label: 'Paciente' },
+            { key: 'CostoTotal', label: 'Monto' },
+            { key: 'Cod062', label: 'Código 062' },
+            { key: 'Responsable', label: 'Responsable' },
+            { key: 'FechaRegistro', label: 'Fecha Registro' },
+            { key: 'FecAte', label: 'Fecha Atención' }
+        ];
+
+        let detailsGridHTML = '<div class="modal-details-grid">';
+        camposAMostrar.forEach(campo => {
+            let valor = item[campo.key] || 'N/A';
+            if ((campo.key === 'FechaRegistro' || campo.key === 'FecAte') && valor !== 'N/A') {
+                valor = new Date(valor + 'T00:00:00').toLocaleDateString('es-ES');
+            }
+            if (campo.key === 'CostoTotal' && valor !== 'N/A') {
+                valor = `S/ ${parseFloat(valor).toFixed(2)}`;
+            }
+            detailsGridHTML += `<div class="modal-details-item"><strong>${campo.label}:</strong></div><div class="modal-details-item"><span>${valor}</span></div>`;
+        });
+
+        const prediccionHTML = `<div class="modal-prediction-item"><strong>Ubicación Probable:</strong>  
+${predecirUbicacionFUA(item.FechaRegistro)}</div>`;
+        detailsGridHTML += prediccionHTML;
+        
+        detailsGridHTML += '</div>';
+
+        detailsModalContent.innerHTML = `
+            <span class="close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">×</span>
+            <h3>Detalles del Paciente</h3>
+            ${detailsGridHTML}
+            <button class="modal-close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">Regresar</button>
+        `;
+        detailsModal.classList.add('active');
+    };
+
     function mostrarResultadosDoctores(resultados) { allDoctorResults = resultados; const totalResults = allDoctorResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allDoctorResults.slice(start, end); const tableRows = paginatedItems.map((doc, i) => { const originalIndex = start + i; return `<tr><td>${doc.nombre || 'N/A'}</td><td>${doc.especialidad || 'N/A'}</td><td class="hide-on-mobile">${doc.rne || 'N/A'}</td><td><button class="ver-mas-btn" onclick="showDoctorDetails(${originalIndex})">Ver Ficha</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('doctores')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('doctores')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Nombre</th><th>Especialidad</th><th class="hide-on-mobile">RNE</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
     function mostrarResultadosPacientes(resultados) { allPatientResults = resultados; const totalResults = allPatientResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allPatientResults.slice(start, end); const tableRows = paginatedItems.map((p, i) => { const originalIndex = start + i; return `<tr><td>${p.PACIENTE || 'N/A'}</td><td>${p.FecAte ? new Date(p.FecAte + 'T00:00:00').toLocaleDateString('es-ES') : 'N/A'}</td><td class="hide-on-mobile">S/ ${p.CostoTotal || '0.00'}</td><td><button class="ver-mas-btn" onclick="showPatientDetails(${originalIndex})">Ver más</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('pacientes')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('pacientes')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Paciente</th><th>Fecha</th><th class="hide-on-mobile">Costo</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
     window.prevPage = (type) => { if (currentPage > 0) { currentPage--; const messages = chatWindow.querySelectorAll('.message'); const lastMessage = messages[messages.length - 1]; if (lastMessage.querySelector('.results-table-container')) { lastMessage.remove(); } if (type === 'doctores') { mostrarResultadosDoctores(allDoctorResults); } else { mostrarResultadosPacientes(allPatientResults); } } };
@@ -235,7 +295,6 @@
     actionButton.addEventListener('click', () => { if (userInput.value.trim() !== '') { handleUserMessage(); } else { toggleRecording(); } });
     userInput.addEventListener('input', updateActionButton);
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
-    window.showPatientDetails = (index) => { const item = allPatientResults[index]; if (!item) return; const camposAMostrar = [ { key: 'Episodio', label: 'Nro. Episodio' }, { key: 'NFUA', label: 'Nro. FUA' }, { key: 'PACIENTE', label: 'Paciente' }, { key: 'CostoTotal', label: 'Monto' }, { key: 'Cod062', label: 'Código 062' }, { key: 'Responsable', label: 'Responsable' }, { key: 'FechaRegistro', label: 'Fecha Registro' }, { key: 'FecAte', label: 'Fecha Atención' } ]; let detailsGridHTML = '<div class="modal-details-grid">'; camposAMostrar.forEach(campo => { let valor = item[campo.key] || 'N/A'; if ((campo.key === 'FechaRegistro' || campo.key === 'FecAte') && valor !== 'N/A') { valor = new Date(valor + 'T00:00:00').toLocaleDateString('es-ES'); } if (campo.key === 'CostoTotal' && valor !== 'N/A') { valor = `S/ ${parseFloat(valor).toFixed(2)}`; } detailsGridHTML += `<div class="modal-details-item"><strong>${campo.label}:</strong></div><div class="modal-details-item"><span>${valor}</span></div>`; }); detailsGridHTML += '</div>'; detailsModalContent.innerHTML = `<span class="close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">×</span><h3>Detalles del Paciente</h3>${detailsGridHTML}<button class="modal-close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">Regresar</button>`; detailsModal.classList.add('active'); };
     window.showDoctorDetails = (index) => { const doc = allDoctorResults[index]; if (!doc) return; let detailsHTML = '<h3>Ficha del Doctor</h3>'; for (const key in doc) { if (key !== 'id' && key !== 'foto' && key !== 'firma') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${doc[key] || 'N/A'}</p>`; } } doctorModalContent.innerHTML = ` <span class="close-btn" onclick="document.getElementById('doctorModal').classList.remove('active')">×</span> ${detailsHTML} <button class="modal-close-btn" onclick="document.getElementById('doctorModal').classList.remove('active')">Regresar</button>`; doctorModal.classList.add('active'); };
     window.onclick = (event) => { if (event.target == detailsModal) { detailsModal.classList.remove('active'); } if (event.target == doctorModal) { doctorModal.classList.remove('active'); } };
 </script>
