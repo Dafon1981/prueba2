@@ -6,13 +6,13 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v8.9 --- */
+        /* --- ESTILOS v9.0 (SIN CAMBIOS ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
             --header-bg-color: #001f3f;
             --header-text-color: #ffffff;
-            --surface-color: rgba(255, 255, 255, 0.85 );
+            --surface-color: rgba(255, 255, 255, 0.85);
             --text-primary: #212529;
             --ia-bubble-color: #e9e9eb;
             --error-color: #dc3545;
@@ -60,7 +60,8 @@
         .pagination-controls { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; font-size: 0.9em; color: #6c757d; }
         .pagination-controls button { background-color: var(--secondary-color); color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
         .pagination-controls button:disabled { background-color: #ced4da; cursor: not-allowed; }
-        .ver-mas-btn { background: none; border: none; color: var(--secondary-color); cursor: pointer; text-decoration: underline; padding: 0; }
+        .ver-mas-btn, .contact-btn { background: none; border: none; color: var(--secondary-color); cursor: pointer; text-decoration: underline; padding: 0; font-size: inherit; font-family: inherit; }
+        .contact-btn { display: inline-block; padding: 5px 10px; background-color: #25D366; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
         .modal.active { display: flex; }
         .modal-content { background-color: #fefefe; padding: 25px; border: 1px solid #888; width: 90%; max-width: 550px; border-radius: 10px; position: relative; }
@@ -69,7 +70,6 @@
         .modal-details-grid { display: grid; grid-template-columns: 150px 1fr; gap: 10px 20px; margin-bottom: 25px; }
         .modal-details-item strong { font-weight: 600; color: var(--primary-color); }
         .modal-details-item span { word-break: break-all; }
-        /* ¡NUEVO ESTILO PARA LA PREDICCIÓN! */
         .modal-prediction-item { grid-column: 1 / -1; margin-top: 15px; padding: 15px; background-color: #eef7ff; border-left: 5px solid var(--secondary-color); border-radius: 4px; }
         .modal-prediction-item strong { color: var(--primary-color); }
         .modal-close-btn { display: block; width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 20px; }
@@ -90,7 +90,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v8.9 (PREDICCIÓN DE UBICACIÓN) ---
+    // --- CÓDIGO JAVASCRIPT v9.0 (INFO REGISTRADOR ESTRUCTURADA) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -155,7 +155,28 @@
                 setAvatar('conversacion');
                 addMessage(iaResponse.respuesta, 'ia-message');
                 conversationHistory.push({ role: 'assistant', content: iaResponse.respuesta });
-            } 
+            }
+            else if (iaResponse.tipo === 'info_registrador') {
+                setAvatar('si');
+                const registradorInfoHTML = `
+                    <div class="results-table-container">
+                        <table class="results-table">
+                            <thead>
+                                <tr><th>Rol</th><th>Nombre</th><th>Horario</th><th>Acción</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Registrador</td>
+                                    <td>Manuel Da Fonseca Irribarri</td>
+                                    <td>L-S de 7am a 1pm</td>
+                                    <td><a href="https://wa.me/51967188120" target="_blank" rel="noopener noreferrer" class="contact-btn">Contacto</a></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                addMessage(registradorInfoHTML, 'ia-message' );
+            }
             else if (iaResponse.tipo === 'consulta_db') {
                 const plan = iaResponse.plan;
                 let query = supabase.from(plan.tabla).select(plan.columnas || '*');
@@ -216,9 +237,7 @@
         if (type === 'user-message') messageDiv.classList.add('user-message');
         if (type === 'ia-message') messageDiv.classList.add('ia-message');
         if (type === 'error-message') messageDiv.classList.add('error-message');
-        const urlRegex = /(https?:\/\/[^\s]+ )/g;
-        const processedContent = content.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-        contentDiv.innerHTML = processedContent;
+        contentDiv.innerHTML = content;
         messageDiv.appendChild(contentDiv);
         chatWindow.appendChild(messageDiv);
         chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -227,29 +246,24 @@
 
     function predecirUbicacionFUA(fechaRegistro) {
         if (!fechaRegistro) return "No se puede predecir la ubicación sin una fecha de registro.";
-        
         const fechaReg = new Date(fechaRegistro + 'T00:00:00');
         const hoy = new Date();
         fechaReg.setHours(0, 0, 0, 0);
         hoy.setHours(0, 0, 0, 0);
-
         const diffTime = hoy - fechaReg;
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
         if (diffDays < 0) return "La fecha de registro es en el futuro. No se puede predecir.";
         if (diffDays <= 5) return "Probablemente en <strong>Módulo 9</strong> o <strong>Cuentas Corrientes</strong>.";
         if (diffDays <= 14) return "Probablemente en <strong>Recepción de Emergencia</strong> (almacén de cajas, en revisión de firmas y fichas).";
         if (diffDays <= 18) return "Probablemente en <strong>Asignación</strong>.";
         if (diffDays <= 25) return "Probablemente en <strong>Digitación</strong> o <strong>Auditoría</strong>.";
         if (diffDays <= 29) return "Probablemente en <strong>Archivo de Digitación</strong>.";
-        
         return "Es muy probable que ya se encuentre en <strong>Archivo Central</strong> (camino final).";
     }
 
     window.showPatientDetails = (index) => {
         const item = allPatientResults[index];
         if (!item) return;
-
         const camposAMostrar = [
             { key: 'Episodio', label: 'Nro. Episodio' },
             { key: 'NFUA', label: 'Nro. FUA' },
@@ -260,7 +274,6 @@
             { key: 'FechaRegistro', label: 'Fecha Registro' },
             { key: 'FecAte', label: 'Fecha Atención' }
         ];
-
         let detailsGridHTML = '<div class="modal-details-grid">';
         camposAMostrar.forEach(campo => {
             let valor = item[campo.key] || 'N/A';
@@ -272,13 +285,10 @@
             }
             detailsGridHTML += `<div class="modal-details-item"><strong>${campo.label}:</strong></div><div class="modal-details-item"><span>${valor}</span></div>`;
         });
-
         const prediccionHTML = `<div class="modal-prediction-item"><strong>Ubicación Probable:</strong>  
 ${predecirUbicacionFUA(item.FechaRegistro)}</div>`;
         detailsGridHTML += prediccionHTML;
-        
         detailsGridHTML += '</div>';
-
         detailsModalContent.innerHTML = `
             <span class="close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">×</span>
             <h3>Detalles del Paciente</h3>
