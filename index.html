@@ -6,7 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v8.4 (AJUSTE FINAL DE INPUT AREA ) --- */
+        /* --- ESTILOS v8.5 (MODAL DE DETALLES REFINADO ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -21,44 +21,15 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
         
         #splash-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #001f3f;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 3000;
-            animation: fadeOutSplash 1s ease-out 4s forwards;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #001f3f; display: flex; justify-content: center; align-items: center; z-index: 3000; animation: fadeOutSplash 1s ease-out 4s forwards;
         }
         #splash-screen img { max-width: 90%; max-height: 90%; object-fit: contain; }
         @keyframes fadeOutSplash { from { opacity: 1; } to { opacity: 0; } }
 
         #welcome-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            z-index: 2000;
-            opacity: 0;
-            animation: fadeIn 0.5s ease-out 5s forwards, fadeOut 0.5s ease-in 10.5s forwards;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: white; display: flex; justify-content: center; align-items: center; text-align: center; z-index: 2000; opacity: 0; animation: fadeIn 0.5s ease-out 5s forwards, fadeOut 0.5s ease-in 10.5s forwards;
         }
-        #welcome-overlay .welcome-box {
-            padding: 30px 40px;
-            border: 3px solid var(--dorado-color);
-            border-radius: 15px;
-            background-color: rgba(0, 31, 63, 0.9);
-            max-width: 90%;
-        }
+        #welcome-overlay .welcome-box { padding: 30px 40px; border: 3px solid var(--dorado-color); border-radius: 15px; background-color: rgba(0, 31, 63, 0.9); max-width: 90%; }
         #welcome-overlay h2 { color: #5dade2; font-size: 2em; margin: 0 0 15px 0; font-weight: bold; }
         #welcome-overlay p { font-size: 1.1em; margin: 0; opacity: 0.9; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -81,18 +52,7 @@
         .user-message .message-content { background-color: var(--secondary-color); color: white; border-bottom-right-radius: 5px; }
         .ia-message .message-content { background-color: var(--ia-bubble-color); color: var(--text-primary); border-bottom-left-radius: 5px; }
         .error-message .message-content { background-color: var(--error-color); color: white; border-bottom-left-radius: 5px; }
-        
-        /* --- ¡ÚNICO CAMBIO! --- Aumentamos el padding inferior para subir la caja de texto */
-        #input-area {
-            display: flex;
-            padding: 15px;
-            border-top: 1px solid rgba(0,0,0,0.1);
-            align-items: center;
-            background-color: rgba(248, 249, 250, 0.9);
-            flex-shrink: 0;
-            padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); /* Aumentado de 15px a 30px */
-        }
-
+        #input-area { display: flex; padding: 15px; border-top: 1px solid rgba(0,0,0,0.1); align-items: center; background-color: rgba(248, 249, 250, 0.9); flex-shrink: 0; padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px)); }
         #user-input { flex-grow: 1; padding: 15px 20px; border: 1px solid #ccc; border-radius: 30px; font-size: 16px; resize: none; outline: none; }
         #action-button { background-color: transparent; border: none; padding: 0; margin-left: 15px; cursor: pointer; width: 80px; height: 80px; flex-shrink: 0; }
         #action-button.recording img { animation: pulse 1.5s infinite; }
@@ -113,6 +73,35 @@
         .modal-content { background-color: #fefefe; padding: 25px; border: 1px solid #888; width: 90%; max-width: 550px; border-radius: 10px; position: relative; }
         .close-btn { position: absolute; top: 10px; right: 15px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; }
         @media (max-width: 600px) { .hide-on-mobile { display: none; } }
+
+        /* --- ESTILOS PARA EL CONTENIDO DEL MODAL --- */
+        .modal-details-grid {
+            display: grid;
+            grid-template-columns: 150px 1fr; /* Columna de etiqueta fija, valor flexible */
+            gap: 10px 20px;
+            margin-bottom: 25px;
+        }
+        .modal-details-item strong {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        .modal-details-item span {
+            word-break: break-all;
+        }
+        .modal-close-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -149,10 +138,11 @@
             </footer>
         </div>
     </div>
-    <div id="detailsModal" class="modal"><div class="modal-content"><span class="close-btn" id="closePatientModal">×</span><div id="detailsModalContent"></div></div></div>
-    <div id="doctorModal" class="modal"><div class="modal-content"><span class="close-btn" id="closeDoctorModal">×</span><div id="doctorModalContent"></div></div></div>
+    
+    <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
+    <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v8.4 (SIN CAMBIOS LÓGICOS) ---
+    // --- CÓDIGO JAVASCRIPT v8.5 (FUNCIÓN showPatientDetails MODIFICADA) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -196,20 +186,8 @@
         presenterAvatar.src = NEUTRO_URL;
         userInput.focus();
         updateActionButton();
-
-        setTimeout(() => {
-            const splashScreen = document.getElementById('splash-screen');
-            if (splashScreen) {
-                splashScreen.style.display = 'none';
-            }
-        }, 5000);
-
-        setTimeout(() => {
-            const welcomeOverlay = document.getElementById('welcome-overlay');
-            if (welcomeOverlay) {
-                welcomeOverlay.style.display = 'none';
-            }
-        }, 11000);
+        setTimeout(() => { const splash = document.getElementById('splash-screen'); if(splash) splash.style.display = 'none'; }, 5000);
+        setTimeout(() => { const welcome = document.getElementById('welcome-overlay'); if(welcome) welcome.style.display = 'none'; }, 11000);
     });
 
     async function handleUserMessage() {
@@ -268,11 +246,74 @@
     userInput.addEventListener('input', updateActionButton);
     userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } });
     function addMessage(content, type) { const messageDiv = document.createElement('div'); messageDiv.classList.add('message'); const contentDiv = document.createElement('div'); contentDiv.classList.add('message-content'); if (type === 'user-message') messageDiv.classList.add('user-message'); if (type === 'ia-message') messageDiv.classList.add('ia-message'); if (type === 'error-message') messageDiv.classList.add('error-message'); contentDiv.innerHTML = content; messageDiv.appendChild(contentDiv); chatWindow.appendChild(messageDiv); chatWindow.scrollTop = chatWindow.scrollHeight; return messageDiv; }
-    window.showPatientDetails = (index) => { const item = allPatientResults[index]; if (!item) return; let detailsHTML = '<h3>Detalles del Paciente</h3>'; for (const key in item) { if (key !== 'id') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${item[key] || 'N/A'}</p>`; } } detailsModalContent.innerHTML = detailsHTML; detailsModal.classList.add('active'); };
-    window.showDoctorDetails = (index) => { const doc = allDoctorResults[index]; if (!doc) return; let detailsHTML = '<h3>Ficha del Doctor</h3>'; for (const key in doc) { if (key !== 'id' && key !== 'foto' && key !== 'firma') { detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${doc[key] || 'N/A'}</p>`; } } doctorModalContent.innerHTML = detailsHTML; doctorModal.classList.add('active'); };
-    document.getElementById('closePatientModal').onclick = () => detailsModal.classList.remove('active');
-    document.getElementById('closeDoctorModal').onclick = () => doctorModal.classList.remove('active');
-    window.onclick = (event) => { if (event.target == detailsModal) { detailsModal.classList.remove('active'); } if (event.target == doctorModal) { doctorModal.classList.remove('active'); } };
+    
+    window.showPatientDetails = (index) => {
+        const item = allPatientResults[index];
+        if (!item) return;
+
+        const camposAMostrar = [
+            { key: 'Episodio', label: 'Nro. Episodio' },
+            { key: 'NFUA', label: 'Nro. FUA' },
+            { key: 'PACIENTE', label: 'Paciente' },
+            { key: 'CostoTotal', label: 'Monto' },
+            { key: 'Cod062', label: 'Código 062' },
+            { key: 'Responsable', label: 'Responsable' },
+            { key: 'FechaRegistro', label: 'Fecha Registro' },
+            { key: 'FecAte', label: 'Fecha Atención' }
+        ];
+
+        let detailsGridHTML = '<div class="modal-details-grid">';
+        camposAMostrar.forEach(campo => {
+            let valor = item[campo.key] || 'N/A';
+            if ((campo.key === 'FechaRegistro' || campo.key === 'FecAte') && valor !== 'N/A') {
+                valor = new Date(valor + 'T00:00:00').toLocaleDateString('es-ES');
+            }
+            if (campo.key === 'CostoTotal' && valor !== 'N/A') {
+                valor = `S/ ${parseFloat(valor).toFixed(2)}`;
+            }
+            detailsGridHTML += `
+                <div class="modal-details-item"><strong>${campo.label}:</strong></div>
+                <div class="modal-details-item"><span>${valor}</span></div>
+            `;
+        });
+        detailsGridHTML += '</div>';
+
+        detailsModalContent.innerHTML = `
+            <span class="close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">×</span>
+            <h3>Detalles del Paciente</h3>
+            ${detailsGridHTML}
+            <button class="modal-close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">Regresar</button>
+        `;
+        
+        detailsModal.classList.add('active');
+    };
+
+    window.showDoctorDetails = (index) => {
+        const doc = allDoctorResults[index];
+        if (!doc) return;
+        let detailsHTML = '<h3>Ficha del Doctor</h3>';
+        // Esta función puede ser refinada de la misma manera si es necesario
+        for (const key in doc) {
+            if (key !== 'id' && key !== 'foto' && key !== 'firma') {
+                detailsHTML += `<p><strong>${key.replace(/_/g, ' ')}:</strong> ${doc[key] || 'N/A'}</p>`;
+            }
+        }
+        doctorModalContent.innerHTML = `
+            <span class="close-btn" onclick="document.getElementById('doctorModal').classList.remove('active')">×</span>
+            ${detailsHTML}
+            <button class="modal-close-btn" onclick="document.getElementById('doctorModal').classList.remove('active')">Regresar</button>
+        `;
+        doctorModal.classList.add('active');
+    };
+    
+    window.onclick = (event) => {
+        if (event.target == detailsModal) {
+            detailsModal.classList.remove('active');
+        }
+        if (event.target == doctorModal) {
+            doctorModal.classList.remove('active');
+        }
+    };
 </script>
 </body>
 </html>
