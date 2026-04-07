@@ -6,7 +6,7 @@
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <style>
-        /* --- ESTILOS v9.3 (SIN CAMBIOS ) --- */
+        /* --- ESTILOS v9.4 (SIN CAMBIOS ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -90,7 +90,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v9.3 (LÓGICA DE PREDICCIÓN DUAL) ---
+    // --- CÓDIGO JAVASCRIPT v9.4 (MENSAJE DE "NO ENCONTRADO" MEJORADO) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -207,7 +207,29 @@
 
                 if (!resultados || resultados.length === 0) {
                     setAvatar('no');
-                    addMessage('No encontré resultados.', 'ia-message');
+                    if (plan.tabla === 'registros') {
+                        addMessage("Ficha no encontrada. Quizás aún no fue registrada por Recepción.", 'ia-message');
+                        const registradorInfoHTML = `
+                            <div class="results-table-container">
+                                <p style="text-align:center; margin-bottom:10px;">Puede ponerse en contacto con el registrador:</p>
+                                <table class="results-table">
+                                    <thead>
+                                        <tr><th>Rol</th><th>Nombre</th><th>Acción</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Registrador</td>
+                                            <td>Manuel Da Fonseca Irribarri</td>
+                                            <td><a href="https://wa.me/51967188120" target="_blank" rel="noopener noreferrer" class="contact-btn">Contacto</a></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        `;
+                        addMessage(registradorInfoHTML, 'ia-message' );
+                    } else {
+                        addMessage('No encontré resultados.', 'ia-message');
+                    }
                 } else {
                     setAvatar('si');
                     addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message');
