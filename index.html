@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ESTILOS v12 (GRÁFICO DINÁMICO ) --- */
+        /* --- ESTILOS v13 (GRÁFICO DE INVENTARIO ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -92,7 +92,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v12 (GRÁFICO DINÁMICO) ---
+    // --- CÓDIGO JAVASCRIPT v13 (GRÁFICO DE INVENTARIO) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -165,7 +165,7 @@
             }
             else if (iaResponse.tipo === 'solicitar_grafico_almacen') {
                 setAvatar('si');
-                addMessage("Claro, estoy generando el gráfico del almacén en tiempo real...", 'ia-message');
+                addMessage("Claro, estoy generando el gráfico del inventario pendiente en el almacén...", 'ia-message');
                 const chartId = `chart-${Date.now()}`;
                 const chartHTML = `<div class="chart-container"><canvas id="${chartId}"></canvas></div>`;
                 addMessage(chartHTML, 'ia-message');
@@ -230,6 +230,7 @@
         const fechaAncla = new Date(fechaAnclaStr + 'T00:00:00');
         const lotes = [];
         const promesas = [];
+        const LOTE_SIZE = 1000;
 
         for (let i = 0; i < 7; i++) {
             const inicioLote = new Date(fechaAncla);
@@ -259,8 +260,8 @@
         });
 
         const backgroundColors = lotes.map(lote => {
-            if (lote.count > 200) return 'rgba(40, 167, 69, 0.6)'; // Verde (Registrado)
-            if (lote.count > 100) return 'rgba(255, 193, 7, 0.6)'; // Amarillo (Registrando)
+            if (lote.count > 800) return 'rgba(40, 167, 69, 0.6)'; // Verde (Casi Completo)
+            if (lote.count > 0) return 'rgba(255, 193, 7, 0.6)'; // Amarillo (Registrando)
             return 'rgba(108, 117, 125, 0.6)'; // Gris (En Cola)
         });
 
@@ -269,16 +270,16 @@
             data: {
                 labels: lotes.map(l => l.label),
                 datasets: [{
-                    label: 'FUAs por Lote de Atención',
-                    data: lotes.map(l => l.count),
+                    label: 'FUAs Pendientes por Lote',
+                    data: lotes.map(l => LOTE_SIZE - l.count),
                     backgroundColor: backgroundColors,
                     borderColor: backgroundColors.map(c => c.replace(/0\.\d+/, '1')),
                     borderWidth: 1
                 }]
             },
             options: {
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} FUAs` } } },
-                scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} FUAs pendientes` } } },
+                scales: { y: { beginAtZero: true, max: LOTE_SIZE, grid: { display: false } }, x: { grid: { display: false } } }
             }
         });
     }
