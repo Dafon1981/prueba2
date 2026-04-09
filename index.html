@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ESTILOS v13 (GRÁFICO DE INVENTARIO ) --- */
+        /* --- ESTILOS v14 (ESTABLES Y CORREGIDOS ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -92,7 +92,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v13 (GRÁFICO DE INVENTARIO) ---
+    // --- CÓDIGO JAVASCRIPT v14 (CORRECCIÓN DE BÚSQUEDA Y GRÁFICO) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -174,10 +174,12 @@
             else if (iaResponse.tipo === 'consulta_db') {
                 const plan = iaResponse.plan;
                 let query = supabase.from(plan.tabla).select(plan.columnas || '*');
+                
                 if (plan.filtros && plan.filtros.length > 0) {
-                    const orConditions = plan.filtros.map(f => `${f.columna}.${f.operador}.%${f.valor}%`).join(',');
+                    const orConditions = plan.filtros.map(f => `${f.columna},ilike,%${f.valor}%`).join(',');
                     query = query.or(orConditions);
                 }
+
                 const { data: resultados, error: dbError } = await query;
                 if (dbError) throw dbError;
                 if (!resultados || resultados.length === 0) {
@@ -228,6 +230,8 @@
         if (!ctx) return;
 
         const fechaAncla = new Date(fechaAnclaStr + 'T00:00:00');
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
         const lotes = [];
         const promesas = [];
         const LOTE_SIZE = 1000;
@@ -235,6 +239,11 @@
         for (let i = 0; i < 7; i++) {
             const inicioLote = new Date(fechaAncla);
             inicioLote.setDate(inicioLote.getDate() + (i * 5));
+            
+            if (inicioLote > hoy) {
+                break; 
+            }
+
             const finLote = new Date(inicioLote);
             finLote.setDate(finLote.getDate() + 4);
 
