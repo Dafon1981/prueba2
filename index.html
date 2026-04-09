@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ESTILOS v11 (GRÁFICO EN CHAT ) --- */
+        /* --- ESTILOS v12 (GRÁFICO DINÁMICO ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -74,7 +74,6 @@
         .modal-prediction-item { grid-column: 1 / -1; margin-top: 15px; padding: 15px; background-color: #eef7ff; border-left: 5px solid var(--secondary-color); border-radius: 4px; }
         .modal-prediction-item strong { color: var(--primary-color); }
         .modal-close-btn { display: block; width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 20px; }
-        /* ¡NUEVO! Estilos para el contenedor del gráfico en el chat */
         .chart-container { padding: 15px; background-color: #fff; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
@@ -93,7 +92,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v11 (GRÁFICO EXPLÍCITO) ---
+    // --- CÓDIGO JAVASCRIPT v12 (GRÁFICO DINÁMICO) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -161,86 +160,33 @@
             }
             else if (iaResponse.tipo === 'info_registrador') {
                 setAvatar('si');
-                const registradorInfoHTML = `
-                    <div class="results-table-container">
-                        <table class="results-table">
-                            <thead>
-                                <tr><th>Rol</th><th>Nombre</th><th>Horario</th><th>Acción</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Registrador</td>
-                                    <td>Manuel Da Fonseca Irribarri</td>
-                                    <td>L-S de 7am a 1pm</td>
-                                    <td><a href="https://wa.me/51967188120" target="_blank" rel="noopener noreferrer" class="contact-btn">Contacto</a></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+                const registradorInfoHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Rol</th><th>Nombre</th><th>Horario</th><th>Acción</th></tr></thead><tbody><tr><td>Registrador</td><td>Manuel Da Fonseca Irribarri</td><td>L-S de 7am a 1pm</td><td><a href="https://wa.me/51967188120" target="_blank" rel="noopener noreferrer" class="contact-btn">Contacto</a></td></tr></tbody></table></div>`;
                 addMessage(registradorInfoHTML, 'ia-message' );
             }
-            else if (iaResponse.tipo === 'mostrar_grafico_almacen') {
+            else if (iaResponse.tipo === 'solicitar_grafico_almacen') {
                 setAvatar('si');
-                addMessage("Claro, aquí tienes una representación visual del estado actual del almacén de registro:", 'ia-message');
+                addMessage("Claro, estoy generando el gráfico del almacén en tiempo real...", 'ia-message');
                 const chartId = `chart-${Date.now()}`;
                 const chartHTML = `<div class="chart-container"><canvas id="${chartId}"></canvas></div>`;
                 addMessage(chartHTML, 'ia-message');
-                mostrarGraficoAlmacen(chartId);
+                mostrarGraficoAlmacen(chartId, iaResponse.fechaAncla);
             }
             else if (iaResponse.tipo === 'consulta_db') {
                 const plan = iaResponse.plan;
                 let query = supabase.from(plan.tabla).select(plan.columnas || '*');
-
                 if (plan.filtros && plan.filtros.length > 0) {
-                    const eqFilters = plan.filtros.filter(f => f.operador === 'eq');
-                    const ilikeFilters = plan.filtros.filter(f => f.operador === 'ilike');
-                    const otherFilters = plan.filtros.filter(f => f.operador !== 'ilike' && f.operador !== 'eq');
-
-                    otherFilters.forEach(filtro => {
-                        if (filtro.operador === 'gte') query = query.gte(filtro.columna, filtro.valor);
-                        else if (filtro.operador === 'lte') query = query.lte(filtro.columna, filtro.valor);
-                    });
-
-                    if (eqFilters.length > 0) {
-                        const orCondition = eqFilters.map(f => `${f.columna}.eq.${f.valor}`).join(',');
-                        query = query.or(orCondition);
-                    }
-
-                    if (ilikeFilters.length > 0) {
-                        const orCondition = ilikeFilters.map(f => `${f.columna}.ilike.%${f.valor}%`).join(',');
-                        query = query.or(orCondition);
-                    }
+                    const orConditions = plan.filtros.map(f => `${f.columna}.${f.operador}.%${f.valor}%`).join(',');
+                    query = query.or(orConditions);
                 }
-
                 const { data: resultados, error: dbError } = await query;
                 if (dbError) throw dbError;
-
                 if (!resultados || resultados.length === 0) {
                     setAvatar('no');
                     if (plan.tabla === 'registros') {
                         addMessage("Ficha no encontrada. Quizás fue registrada por otro sistema o aún está en el almacén.", 'ia-message');
-                        const registradorInfoHTML = `
-                            <div class="results-table-container">
-                                <p style="text-align:center; margin-bottom:10px;">Para ambos casos, puede ponerse en contacto con el registrador:</p>
-                                <table class="results-table">
-                                    <thead>
-                                        <tr><th>Rol</th><th>Nombre</th><th>Acción</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Registrador</td>
-                                            <td>Manuel Da Fonseca Irribarri</td>
-                                            <td><a href="https://wa.me/51967188120" target="_blank" rel="noopener noreferrer" class="contact-btn">Contacto</a></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        `;
+                        const registradorInfoHTML = `<div class="results-table-container"><p style="text-align:center; margin-bottom:10px;">Para ambos casos, puede ponerse en contacto con el registrador:</p><table class="results-table"><thead><tr><th>Rol</th><th>Nombre</th><th>Acción</th></tr></thead><tbody><tr><td>Registrador</td><td>Manuel Da Fonseca Irribarri</td><td><a href="https://wa.me/51967188120" target="_blank" rel="noopener noreferrer" class="contact-btn">Contacto</a></td></tr></tbody></table></div>`;
                         addMessage(registradorInfoHTML, 'ia-message' );
-                    } else {
-                        addMessage('No encontré resultados.', 'ia-message');
-                    }
+                    } else { addMessage('No encontré resultados.', 'ia-message'); }
                 } else {
                     setAvatar('si');
                     addMessage(`Encontré ${resultados.length} resultado(s).`, 'ia-message');
@@ -277,22 +223,45 @@
         return messageDiv;
     }
 
-    let storageChartInstance = null;
-    function mostrarGraficoAlmacen(chartId) {
+    async function mostrarGraficoAlmacen(chartId, fechaAnclaStr) {
         const ctx = document.getElementById(chartId)?.getContext('2d');
         if (!ctx) return;
 
-        const lotes = [
-            { label: '20-25 Mar', status: 'Registrado' },
-            { label: '26-31 Mar', status: 'Registrando' },
-            { label: '01-05 Abr', status: 'En cola' },
-            { label: '06-10 Abr', status: 'En cola' }
-        ];
+        const fechaAncla = new Date(fechaAnclaStr + 'T00:00:00');
+        const lotes = [];
+        const promesas = [];
+
+        for (let i = 0; i < 7; i++) {
+            const inicioLote = new Date(fechaAncla);
+            inicioLote.setDate(inicioLote.getDate() + (i * 5));
+            const finLote = new Date(inicioLote);
+            finLote.setDate(finLote.getDate() + 4);
+
+            const formatoFecha = (fecha) => `${fecha.getDate().toString().padStart(2, '0')} ${fecha.toLocaleString('es-ES', { month: 'short' })}`;
+            const label = `${formatoFecha(inicioLote)} - ${formatoFecha(finLote)}`;
+            
+            const inicioISO = inicioLote.toISOString().split('T')[0];
+            const finISO = finLote.toISOString().split('T')[0];
+
+            promesas.push(
+                supabase.from('registros').select('*', { count: 'exact', head: true })
+                .gte('FecAte', inicioISO).lte('FecAte', finISO)
+            );
+            lotes.push({ label: label, count: 0 });
+        }
+
+        const resultados = await Promise.all(promesas);
+        
+        resultados.forEach((res, index) => {
+            if (!res.error) {
+                lotes[index].count = res.count;
+            }
+        });
 
         const backgroundColors = lotes.map(lote => {
-            if (lote.status === 'Registrado') return 'rgba(40, 167, 69, 0.6)';
-            if (lote.status === 'Registrando') return 'rgba(255, 193, 7, 0.6)';
-            return 'rgba(108, 117, 125, 0.6)';
+            if (lote.count > 200) return 'rgba(40, 167, 69, 0.6)'; // Verde (Registrado)
+            if (lote.count > 100) return 'rgba(255, 193, 7, 0.6)'; // Amarillo (Registrando)
+            return 'rgba(108, 117, 125, 0.6)'; // Gris (En Cola)
         });
 
         new Chart(ctx, {
@@ -300,16 +269,16 @@
             data: {
                 labels: lotes.map(l => l.label),
                 datasets: [{
-                    label: 'Estado de Lotes en Almacén',
-                    data: [1000, 1000, 1000, 1000],
+                    label: 'FUAs por Lote de Atención',
+                    data: lotes.map(l => l.count),
                     backgroundColor: backgroundColors,
                     borderColor: backgroundColors.map(c => c.replace(/0\.\d+/, '1')),
                     borderWidth: 1
                 }]
             },
             options: {
-                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => lotes[ctx.dataIndex].status } } },
-                scales: { y: { display: false }, x: { grid: { display: false } } }
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} FUAs` } } },
+                scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
             }
         });
     }
@@ -317,7 +286,6 @@
     function predecirUbicacionFUA(fechaAtencion, fechaRegistro) {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
-        
         if (fechaRegistro) {
             const fechaReg = new Date(fechaRegistro + 'T00:00:00');
             fechaReg.setHours(0, 0, 0, 0);
