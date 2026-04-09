@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Asistente de Emergencia IA</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
-    <!-- ¡NUEVO! Añadimos la librería de gráficos Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ESTILOS v10 (CON GRÁFICO ) --- */
+        /* --- ESTILOS v11 (GRÁFICO EN CHAT ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -75,8 +74,8 @@
         .modal-prediction-item { grid-column: 1 / -1; margin-top: 15px; padding: 15px; background-color: #eef7ff; border-left: 5px solid var(--secondary-color); border-radius: 4px; }
         .modal-prediction-item strong { color: var(--primary-color); }
         .modal-close-btn { display: block; width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 20px; }
-        /* ¡NUEVO! Estilos para el contenedor del gráfico */
-        #storage-chart-container { grid-column: 1 / -1; margin-top: 20px; }
+        /* ¡NUEVO! Estilos para el contenedor del gráfico en el chat */
+        .chart-container { padding: 15px; background-color: #fff; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
@@ -94,7 +93,7 @@
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v10 (CON GRÁFICO DE ALMACÉN) ---
+    // --- CÓDIGO JAVASCRIPT v11 (GRÁFICO EXPLÍCITO) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
@@ -180,6 +179,14 @@
                     </div>
                 `;
                 addMessage(registradorInfoHTML, 'ia-message' );
+            }
+            else if (iaResponse.tipo === 'mostrar_grafico_almacen') {
+                setAvatar('si');
+                addMessage("Claro, aquí tienes una representación visual del estado actual del almacén de registro:", 'ia-message');
+                const chartId = `chart-${Date.now()}`;
+                const chartHTML = `<div class="chart-container"><canvas id="${chartId}"></canvas></div>`;
+                addMessage(chartHTML, 'ia-message');
+                mostrarGraficoAlmacen(chartId);
             }
             else if (iaResponse.tipo === 'consulta_db') {
                 const plan = iaResponse.plan;
@@ -271,30 +278,24 @@
     }
 
     let storageChartInstance = null;
-    function mostrarGraficoAlmacen(fechaAtencionUsuario) {
-        const container = document.getElementById('storage-chart-container');
-        if (!container) return;
-        container.innerHTML = '<canvas id="storageChart"></canvas>';
-        const ctx = document.getElementById('storageChart').getContext('2d');
+    function mostrarGraficoAlmacen(chartId) {
+        const ctx = document.getElementById(chartId)?.getContext('2d');
+        if (!ctx) return;
 
         const lotes = [
-            { label: '20-25 Mar', start: new Date('2026-03-20'), end: new Date('2026-03-25'), status: 'Registrado' },
-            { label: '26-31 Mar', start: new Date('2026-03-26'), end: new Date('2026-03-31'), status: 'Registrando' },
-            { label: '01-05 Abr', start: new Date('2026-04-01'), end: new Date('2026-04-05'), status: 'En cola' },
-            { label: '06-10 Abr', start: new Date('2026-04-06'), end: new Date('2026-04-10'), status: 'En cola' }
+            { label: '20-25 Mar', status: 'Registrado' },
+            { label: '26-31 Mar', status: 'Registrando' },
+            { label: '01-05 Abr', status: 'En cola' },
+            { label: '06-10 Abr', status: 'En cola' }
         ];
 
-        const fechaAte = new Date(fechaAtencionUsuario + 'T00:00:00');
         const backgroundColors = lotes.map(lote => {
-            if (fechaAte >= lote.start && fechaAte <= lote.end) return 'rgba(212, 175, 55, 0.8)';
             if (lote.status === 'Registrado') return 'rgba(40, 167, 69, 0.6)';
             if (lote.status === 'Registrando') return 'rgba(255, 193, 7, 0.6)';
             return 'rgba(108, 117, 125, 0.6)';
         });
 
-        if (storageChartInstance) storageChartInstance.destroy();
-
-        storageChartInstance = new Chart(ctx, {
+        new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: lotes.map(l => l.label),
@@ -316,34 +317,27 @@
     function predecirUbicacionFUA(fechaAtencion, fechaRegistro) {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
-        let resultado = { texto: "", mostrarGrafico: false };
-
+        
         if (fechaRegistro) {
             const fechaReg = new Date(fechaRegistro + 'T00:00:00');
             fechaReg.setHours(0, 0, 0, 0);
             const diffDays = Math.ceil((hoy - fechaReg) / (1000 * 60 * 60 * 24));
-            if (diffDays < 0) { resultado.texto = "La fecha de registro es en el futuro. No se puede predecir."; }
-            else if (diffDays <= 0) { resultado.texto = "Probablemente en <strong>Asignación</strong> (recién registrado hoy)."; }
-            else if (diffDays <= 5) { resultado.texto = "Probablemente en <strong>Digitación</strong> o <strong>Auditoría</strong>."; }
-            else if (diffDays <= 12) { resultado.texto = "Probablemente en <strong>Archivo de Digitación</strong>."; }
-            else { resultado.texto = "Es muy probable que ya se encuentre en <strong>Archivo Central</strong>."; }
+            if (diffDays < 0) return "La fecha de registro es en el futuro. No se puede predecir.";
+            if (diffDays <= 0) return "Probablemente en <strong>Asignación</strong> (recién registrado hoy).";
+            if (diffDays <= 5) return "Probablemente en <strong>Digitación</strong> o <strong>Auditoría</strong>.";
+            if (diffDays <= 12) return "Probablemente en <strong>Archivo de Digitación</strong>.";
+            return "Es muy probable que ya se encuentre en <strong>Archivo Central</strong>.";
         }
         else if (fechaAtencion) {
             const fechaAte = new Date(fechaAtencion + 'T00:00:00');
             fechaAte.setHours(0, 0, 0, 0);
             const diffDays = Math.ceil((hoy - fechaAte) / (1000 * 60 * 60 * 24));
-            if (diffDays < 0) { resultado.texto = "La fecha de atención es en el futuro. No se puede predecir."; }
-            else if (diffDays <= 3) { resultado.texto = "Probablemente en <strong>Módulo 9</strong>."; }
-            else if (diffDays <= 5) { resultado.texto = "Probablemente en <strong>Cuentas Corrientes</strong>."; }
-            else {
-                resultado.texto = "Probablemente en <strong>Recepción de Emergencia</strong> (almacén, pendiente de registro).";
-                resultado.mostrarGrafico = true; // ¡Activamos el gráfico!
-            }
+            if (diffDays < 0) return "La fecha de atención es en el futuro. No se puede predecir.";
+            if (diffDays <= 3) return "Probablemente en <strong>Módulo 9</strong>.";
+            if (diffDays <= 5) return "Probablemente en <strong>Cuentas Corrientes</strong>.";
+            return "Probablemente en <strong>Recepción de Emergencia</strong> (almacén, pendiente de registro).";
         }
-        else {
-            resultado.texto = "No hay suficientes fechas para realizar una predicción de ubicación.";
-        }
-        return resultado;
+        return "No hay suficientes fechas para realizar una predicción de ubicación.";
     }
 
     window.showPatientDetails = (index) => {
@@ -367,14 +361,9 @@
             detailsGridHTML += `<div class="modal-details-item"><strong>${campo.label}:</strong></div><div class="modal-details-item"><span>${valor}</span></div>`;
         });
         
-        const prediccion = predecirUbicacionFUA(item.FecAte, item.FechaRegistro);
+        const prediccionTexto = predecirUbicacionFUA(item.FecAte, item.FechaRegistro);
         detailsGridHTML += `<div class="modal-prediction-item"><strong>Ubicación Probable:</strong>  
-${prediccion.texto}</div>`;
-        
-        if (prediccion.mostrarGrafico) {
-            detailsGridHTML += '<div id="storage-chart-container"></div>';
-        }
-        
+${prediccionTexto}</div>`;
         detailsGridHTML += '</div>';
 
         detailsModalContent.innerHTML = `
@@ -384,10 +373,6 @@ ${prediccion.texto}</div>`;
             <button class="modal-close-btn" onclick="document.getElementById('detailsModal').classList.remove('active')">Regresar</button>
         `;
         detailsModal.classList.add('active');
-
-        if (prediccion.mostrarGrafico) {
-            mostrarGraficoAlmacen(item.FecAte);
-        }
     };
 
     function mostrarResultadosDoctores(resultados) { allDoctorResults = resultados; const totalResults = allDoctorResults.length; const start = currentPage * ITEMS_PER_PAGE; const end = start + ITEMS_PER_PAGE; const paginatedItems = allDoctorResults.slice(start, end); const tableRows = paginatedItems.map((doc, i) => { const originalIndex = start + i; return `<tr><td>${doc.nombre || 'N/A'}</td><td>${doc.especialidad || 'N/A'}</td><td class="hide-on-mobile">${doc.rne || 'N/A'}</td><td><button class="ver-mas-btn" onclick="showDoctorDetails(${originalIndex})">Ver Ficha</button></td></tr>`; }).join(''); const paginationControls = `<div class="pagination-controls"><span>Mostrando ${start + 1}-${Math.min(end, totalResults)} de ${totalResults}</span><div><button onclick="prevPage('doctores')" ${currentPage === 0 ? 'disabled' : ''}>Anterior</button><button onclick="nextPage('doctores')" ${end >= totalResults ? 'disabled' : ''}>Siguiente</button></div></div>`; const tablaHTML = `<div class="results-table-container"><table class="results-table"><thead><tr><th>Nombre</th><th>Especialidad</th><th class="hide-on-mobile">RNE</th><th>Acción</th></tr></thead><tbody>${tableRows}</tbody></table>${totalResults > ITEMS_PER_PAGE ? paginationControls : ''}</div>`; addMessage(tablaHTML, 'ia-message'); }
