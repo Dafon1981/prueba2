@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* --- ESTILOS v11 (GRÁFICO EN CHAT ) --- */
+        /* --- ESTILOS v12 (SIN CUADRO DE BIENVENIDA ) --- */
         :root {
             --primary-color: #005A9C;
             --secondary-color: #007bff;
@@ -20,17 +20,16 @@
             --dorado-color: #d4af37;
         }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow: hidden; }
+        
+        /* Splash Screen (Se mantiene) */
         #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #001f3f; display: flex; justify-content: center; align-items: center; z-index: 3000; animation: fadeOutSplash 1s ease-out 4s forwards; }
         #splash-screen img { max-width: 90%; max-height: 90%; object-fit: contain; }
-        @keyframes fadeOutSplash { from { opacity: 1; } to { opacity: 0; } }
-        #welcome-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); color: white; display: flex; justify-content: center; align-items: center; text-align: center; z-index: 2000; opacity: 0; animation: fadeIn 0.5s ease-out 5s forwards, fadeOut 0.5s ease-in 10.5s forwards; }
-        #welcome-overlay .welcome-box { padding: 30px 40px; border: 3px solid var(--dorado-color); border-radius: 15px; background-color: rgba(0, 31, 63, 0.9); max-width: 90%; }
-        #welcome-overlay h2 { color: #5dade2; font-size: 2em; margin: 0 0 15px 0; font-weight: bold; }
-        #welcome-overlay p { font-size: 1.1em; margin: 0; opacity: 0.9; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes fadeOutSplash { from { opacity: 1; } to { opacity: 0; display: none; } }
+        
+        /* El #welcome-overlay ha sido eliminado completamente */
+
         .app-container { position: relative; height: 100vh; width: 100%; }
-        .background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg'  ) no-repeat center center; background-size: cover; z-index: 1; }
+        .background-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('https://esiklpxyectbekxvajnw.supabase.co/storage/v1/object/public/fondos/recepcion.jpg' ) no-repeat center center; background-size: cover; z-index: 1; }
         .chat-panel { position: relative; z-index: 2; height: 100%; width: 100%; max-width: 800px; margin: 0 auto; background-color: var(--surface-color); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,0,0,0.1); }
         .chat-header { display: flex; align-items: center; padding: 15px 20px; background-color: var(--header-bg-color); border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; padding-top: calc(45px + env(safe-area-inset-top, 0px)); }
         .header-logo { width: 40px; height: 40px; margin-right: 15px; }
@@ -74,29 +73,40 @@
         .modal-prediction-item { grid-column: 1 / -1; margin-top: 15px; padding: 15px; background-color: #eef7ff; border-left: 5px solid var(--secondary-color); border-radius: 4px; }
         .modal-prediction-item strong { color: var(--primary-color); }
         .modal-close-btn { display: block; width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; text-align: center; margin-top: 20px; }
-        /* ¡NUEVO! Estilos para el contenedor del gráfico en el chat */
         .chart-container { padding: 15px; background-color: #fff; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
     <div id="splash-screen"><img src="https://raw.githubusercontent.com/Dafon1981/prueba2/main/presentacionfoto.png" alt="Presentación Hospital Cayetano Heredia"></div>
-    <div id="welcome-overlay"><div class="welcome-box"><h2>Bienvenido a Recepción de Emergencia</h2><p>Haga sus preguntas sobre FUAs, doctores y más...</p></div></div>
+    
     <div class="app-container">
         <div class="background-image"></div>
         <div class="chat-panel">
-            <header class="chat-header"><img src="https://www.hospitalcayetano.gob.pe/PortalWeb/assets/icon/logo-final.png" alt="Logo Hospital" class="header-logo"><div class="header-info"><h1>Recepción de Emergencia</h1><p>Asistente de Información</p></div></header>
-            <div class="avatar-container"><img id="presenter-avatar" src="" alt="Asistente Virtual"></div>
+            <header class="chat-header">
+                <img src="https://www.hospitalcayetano.gob.pe/PortalWeb/assets/icon/logo-final.png" alt="Logo Hospital" class="header-logo">
+                <div class="header-info">
+                    <h1>Recepción de Emergencia</h1>
+                    <p>Asistente de Información</p>
+                </div>
+            </header>
+            <div class="avatar-container">
+                <img id="presenter-avatar" src="" alt="Asistente Virtual">
+            </div>
             <main id="chat-window"></main>
-            <footer id="input-area"><input type="text" id="user-input" placeholder="Escribe o presiona el micrófono..."><button id="action-button"><img id="action-button-icon" src="" alt="Acción"></button></footer>
+            <footer id="input-area">
+                <input type="text" id="user-input" placeholder="Escribe o presiona el micrófono...">
+                <button id="action-button">
+                    <img id="action-button-icon" src="" alt="Acción">
+                </button>
+            </footer>
         </div>
     </div>
     <div id="detailsModal" class="modal"><div class="modal-content" id="detailsModalContent"></div></div>
     <div id="doctorModal" class="modal"><div class="modal-content" id="doctorModalContent"></div></div>
 <script>
-    // --- CÓDIGO JAVASCRIPT v11 (GRÁFICO EXPLÍCITO) ---
     const supabaseUrl = 'https://esiklpxyectbekxvajnw.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzaWtscHh5ZWN0YmVreHZham53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2OTI1MjEsImV4cCI6MjA3NzI2ODUyMX0.mtQnqUrTmhmN1DQxOAUnGpizhYZobStHDH0cz_XfKGU';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey  );
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey );
 
     const presenterAvatar = document.getElementById('presenter-avatar');
     const chatWindow = document.getElementById('chat-window');
@@ -107,18 +117,22 @@
     const detailsModalContent = document.getElementById('detailsModalContent');
     const doctorModal = document.getElementById('doctorModal');
     const doctorModalContent = document.getElementById('doctorModalContent');
+    
     let conversationHistory = [];
     let allPatientResults = [];
     let allDoctorResults = [];
     let currentPage = 0;
     const ITEMS_PER_PAGE = 10;
+    
     const URL_BOTON_ROJO = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_rojo.png';
     const URL_BOTON_VERDE = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/boton_verde.png';
     const gifs = { saludo: ['01_saludo.gif'], si: ['si_02.gif', 'si_03.gif', 'si_04.gif'], no: ['no_01.gif', 'no_02.gif', 'no_03.gif'], conversacion: ['con_01.gif', 'con_02.gif', 'con_03.gif'] };
     const NEUTRO_URL = 'https://raw.githubusercontent.com/Dafon1981/prueba2/main/neutro.jpg';
+    
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition;
     let isRecording = false;
+    
     if (SpeechRecognition ) {
         recognition = new SpeechRecognition();
         recognition.lang = 'es-ES';
@@ -128,17 +142,41 @@
         recognition.onend = () => { isRecording = false; actionButton.classList.remove('recording'); userInput.placeholder = 'Escribe o presiona el micrófono...'; };
         recognition.onresult = (event) => { const transcript = event.results[0][0].transcript; userInput.value = transcript; updateActionButton(); handleUserMessage(); };
         recognition.onerror = (event) => { console.error('Error en el reconocimiento de voz:', event.error); addMessage(`Error de micrófono: ${event.error}`, 'error-message'); };
-    } else { console.warn("El reconocimiento de voz no es compatible con este navegador."); }
-    function toggleRecording() { if (!SpeechRecognition) { addMessage("Lo siento, tu navegador no soporta el reconocimiento de voz.", 'error-message'); return; } if (isRecording) { recognition.stop(); } else { try { recognition.start(); } catch(e) { console.error("Error al iniciar grabación:", e); addMessage("El micrófono ya está en uso o hubo un error.", "error-message"); } } }
-    function setAvatar(tipo) { const gifList = gifs[tipo] || gifs.conversacion; const randomGif = gifList[Math.floor(Math.random() * gifList.length)]; const baseUrl = `https://raw.githubusercontent.com/Dafon1981/prueba2/main/${randomGif}`; presenterAvatar.src = `${baseUrl}?t=${new Date( ).getTime()}`; setTimeout(() => { presenterAvatar.src = NEUTRO_URL; }, 2500); }
-    function updateActionButton() { actionButtonIcon.src = (userInput.value.trim() === '') ? URL_BOTON_ROJO : URL_BOTON_VERDE; actionButton.title = (userInput.value.trim() === '') ? "Grabar voz" : "Enviar mensaje"; }
+    } else { 
+        console.warn("El reconocimiento de voz no es compatible con este navegador."); 
+    }
+    
+    function toggleRecording() { 
+        if (!SpeechRecognition) { addMessage("Lo siento, tu navegador no soporta el reconocimiento de voz.", 'error-message'); return; } 
+        if (isRecording) { recognition.stop(); } else { try { recognition.start(); } catch(e) { console.error("Error al iniciar grabación:", e); addMessage("El micrófono ya está en uso o hubo un error.", "error-message"); } } 
+    }
+    
+    function setAvatar(tipo) { 
+        const gifList = gifs[tipo] || gifs.conversacion; 
+        const randomGif = gifList[Math.floor(Math.random() * gifList.length)]; 
+        const baseUrl = `https://raw.githubusercontent.com/Dafon1981/prueba2/main/${randomGif}`; 
+        presenterAvatar.src = `${baseUrl}?t=${new Date( ).getTime()}`; 
+        setTimeout(() => { presenterAvatar.src = NEUTRO_URL; }, 2500); 
+    }
+    
+    function updateActionButton() { 
+        actionButtonIcon.src = (userInput.value.trim() === '') ? URL_BOTON_ROJO : URL_BOTON_VERDE; 
+        actionButton.title = (userInput.value.trim() === '') ? "Grabar voz" : "Enviar mensaje"; 
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         presenterAvatar.src = NEUTRO_URL;
         userInput.focus();
         updateActionButton();
-        setTimeout(() => { const splash = document.getElementById('splash-screen'); if(splash) splash.style.display = 'none'; }, 5000);
-        setTimeout(() => { const welcome = document.getElementById('welcome-overlay'); if(welcome) welcome.style.display = 'none'; }, 11000);
+        setTimeout(() => { 
+            const splash = document.getElementById('splash-screen'); 
+            if(splash) {
+                splash.style.display = 'none'; 
+                // Añadimos el saludo inicial justo después de que desaparece el splash
+                setAvatar('saludo'); 
+                addMessage("Soy asistente de recepción de emergencia ¿En qué puedo ayudarte hoy?", 'ia-message');
+            }
+        }, 5000);
     });
 
     async function handleUserMessage() {
@@ -178,7 +216,7 @@
                         </table>
                     </div>
                 `;
-                addMessage(registradorInfoHTML, 'ia-message' );
+                addMessage(registradorInfoHTML, 'ia-message'  );
             }
             else if (iaResponse.tipo === 'mostrar_grafico_almacen') {
                 setAvatar('si');
@@ -237,7 +275,7 @@
                                 </table>
                             </div>
                         `;
-                        addMessage(registradorInfoHTML, 'ia-message' );
+                        addMessage(registradorInfoHTML, 'ia-message'  );
                     } else {
                         addMessage('No encontré resultados.', 'ia-message');
                     }
@@ -360,6 +398,10 @@
             }
             detailsGridHTML += `<div class="modal-details-item"><strong>${campo.label}:</strong></div><div class="modal-details-item"><span>${valor}</span></div>`;
         });
+        
+        // --- ¡NUEVO! Lógica para mostrar el Paquete ---
+        const paqueteValor = (item.NomPaquete && item.NomPaquete.trim() !== '') ? item.NomPaquete : 'Suelto';
+        detailsGridHTML += `<div class="modal-details-item"><strong>Paquete:</strong></div><div class="modal-details-item"><span>${paqueteValor}</span></div>`;
         
         const prediccionTexto = predecirUbicacionFUA(item.FecAte, item.FechaRegistro);
         detailsGridHTML += `<div class="modal-prediction-item"><strong>Ubicación Probable:</strong>  
